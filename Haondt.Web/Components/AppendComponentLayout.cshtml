@@ -1,0 +1,8 @@
+﻿@using Haondt.Web.Core.Extensions
+@model Haondt.Web.Components.AppendComponentLayoutModel
+
+@foreach(var component in Model.Components)
+{
+    @await Html.PartialAsync(component);
+} 
+

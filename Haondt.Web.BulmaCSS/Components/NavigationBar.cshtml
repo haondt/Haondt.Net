@@ -1,0 +1,31 @@
+@model Haondt.Web.BulmaCSS.Components.NavigationBarModel
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        @if(Model.LogoClickUri)
+        {
+            <a class="navbar-item" href="@Model.LogoClickUri.Value">
+            @if (Model.LogoUri)
+            {
+                <img src="@Model.LogoUri" height="125"/>
+            }
+            </a>
+        }
+        else
+        {
+            @if (Model.LogoUri)
+            {
+                <img src="@Model.LogoUri" height="125"/>
+            }
+        }
+         <a role="button" class="navbar-burger" 
+            _="on click toggle .is-active on me"
+            aria-label="menu" aria-expanded="false" 
+            data-target="navbarBasicExample">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+    </div>
+</nav>

@@ -20,6 +20,8 @@ namespace Haondt.Web.Extensions
             services.AddSingleton<IIndexModelComponentFactory, IndexModelComponentFactory>();
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<IndexModel> { ViewPath = "~/Components/Index.cshtml" });
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
+            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<AppendComponentLayoutModel> { ViewPath = "~/Components/AppendComponentLayout.cshtml" });
+            services.AddSingleton<IEventPublisher, EventPublisher>();
             return services;
         }
     }

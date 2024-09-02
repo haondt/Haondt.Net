@@ -11,9 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web", "Haondt.Web\Ha
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Styles", "Haondt.Web.Styles\Haondt.Web.Styles.csproj", "{FB083E9F-CC4E-442F-A6E3-83AB1F578060}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Web.BulmaCSS", "Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj", "{A3BD55A3-3631-471C-B508-B06B587A5E1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.BulmaCSS", "Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj", "{A3BD55A3-3631-471C-B508-B06B587A5E1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Web.Components", "Haondt.Web.Components\Haondt.Web.Components.csproj", "{25E08061-914C-4367-97F7-DB6332383C5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Components", "Haondt.Web.Components\Haondt.Web.Components.csproj", "{25E08061-914C-4367-97F7-DB6332383C5B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
