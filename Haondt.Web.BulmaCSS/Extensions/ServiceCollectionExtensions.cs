@@ -1,8 +1,10 @@
-﻿using Haondt.Web.BulmaCSS.Components;
+﻿using Haondt.Web.Assets;
+using Haondt.Web.BulmaCSS.Components;
 using Haondt.Web.BulmaCSS.Services;
 using Haondt.Web.Components.Services;
 using Haondt.Web.Core.Components;
 using Haondt.Web.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
@@ -20,6 +22,7 @@ namespace Haondt.Web.BulmaCSS.Extensions
             services.AddBulmaCSSHeadEntries();
             services.AddBulmaCSSServices(configuration);
             services.AddBulmaCSSComponents(configuration);
+            services.AddBulmaCSSAssetSources();
 
             return services;
         }
@@ -68,11 +71,24 @@ namespace Haondt.Web.BulmaCSS.Extensions
 
         }
 
+        public static IServiceCollection AddBulmaCSSAssetSources(this IServiceCollection services)
+        {
+            var assembly = typeof(ServiceCollectionExtensions).Assembly;
+            services.AddSingleton<IAssetSource>(sp => new ManifestAssetSource(assembly));
+            return services;
+        }
+
         public static IServiceCollection AddBulmaCSSHeadEntries(this IServiceCollection services)
         {
             services.AddSingleton<IHeadEntryDescriptor>(new StyleSheetDescriptor
             {
                 Uri = "https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
+            });
+
+            var assemblyPrefix = typeof(ServiceCollectionExtensions).Assembly.GetName().Name;
+            services.AddSingleton<IHeadEntryDescriptor>(sp => new StyleSheetDescriptor
+            {
+                Uri = $"/_asset/{assemblyPrefix}.wwwroot.styles.css"
             });
 
             return services;

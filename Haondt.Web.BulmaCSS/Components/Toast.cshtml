@@ -1,20 +1,20 @@
 ﻿@model Haondt.Web.BulmaCSS.Components.ToastModel
 <div hx-swap-oob="afterbegin:#toast-container">
 
-<div class="notification"
+<div class="notification toast"
     _="
         on load
             add .created to me
             then wait 5s
             then remove .created from me
-            then wait for animationend
+            then wait for transitionend
             then send deleted to me
         end
         on deleted
             remove me
         end
         ">
-    <button class="delete" _="on click send deleted to the closest <div.notification />"></button>
+    <button class="delete" _="on click send deleted to the closest <div.toast />"></button>
     @Model.Message
 </div>
 </div>

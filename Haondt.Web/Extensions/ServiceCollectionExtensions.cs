@@ -1,7 +1,10 @@
-﻿using Haondt.Web.Components;
+﻿using Haondt.Web.Assets;
+using Haondt.Web.Components;
 using Haondt.Web.Core.Components;
 using Haondt.Web.Core.Services;
 using Haondt.Web.Services;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -22,6 +25,9 @@ namespace Haondt.Web.Extensions
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<AppendComponentLayoutModel> { ViewPath = "~/Components/AppendComponentLayout.cshtml" });
             services.AddSingleton<IEventPublisher, EventPublisher>();
+            services.AddSingleton<IAssetProvider, AssetProvider>();
+            services.AddSingleton<FileExtensionContentTypeProvider>();
+            services.AddTransient<IMemoryCache, MemoryCache>();
             return services;
         }
     }

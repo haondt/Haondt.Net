@@ -1,0 +1,8 @@
+﻿.toast {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.toast.created {
+    opacity: 1;
+}
