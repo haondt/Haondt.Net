@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Demo", "Haondt.W
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web", "Haondt.Web\Haondt.Web.csproj", "{5A5E5155-B408-423F-9022-696E5F5C8AF4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Styles", "Haondt.Web.Styles\Haondt.Web.Styles.csproj", "{FB083E9F-CC4E-442F-A6E3-83AB1F578060}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.BulmaCSS", "Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj", "{A3BD55A3-3631-471C-B508-B06B587A5E1C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Components", "Haondt.Web.Components\Haondt.Web.Components.csproj", "{25E08061-914C-4367-97F7-DB6332383C5B}"
@@ -33,10 +31,6 @@ Global
 		{5A5E5155-B408-423F-9022-696E5F5C8AF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A5E5155-B408-423F-9022-696E5F5C8AF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A5E5155-B408-423F-9022-696E5F5C8AF4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FB083E9F-CC4E-442F-A6E3-83AB1F578060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FB083E9F-CC4E-442F-A6E3-83AB1F578060}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FB083E9F-CC4E-442F-A6E3-83AB1F578060}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FB083E9F-CC4E-442F-A6E3-83AB1F578060}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A3BD55A3-3631-471C-B508-B06B587A5E1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A3BD55A3-3631-471C-B508-B06B587A5E1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3BD55A3-3631-471C-B508-B06B587A5E1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
