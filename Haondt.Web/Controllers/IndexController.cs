@@ -10,29 +10,20 @@ using Microsoft.Extensions.Options;
 
 namespace Haondt.Web.Controllers
 {
-        public class IndexController(
-        IOptions<IndexSettings> options,
-        IComponentFactory componentFactory) : BaseController
+    public class IndexController(IOptions<IndexSettings> options, IIndexModelComponentFactory indexFactory) : BaseController
     {
-        private readonly IndexSettings _indexSettings = options.Value;
 
         [Route("/")]
         public Task<IActionResult> Redirect()
         {
-            return Get(_indexSettings.HomePage);
+            return Get(options.Value.HomePage);
         }
 
         [Route("{page}")]
         public async Task<IActionResult> Get([FromRoute] string page)
         {
-            var loader = await componentFactory.GetPlainComponent(new LoaderModel { Target = $"/{page}" });
-            var index = await componentFactory.GetComponent(new IndexModel
-            {
-                Title = _indexSettings.SiteName,
-                Content = loader.Value
-            });
-
-            return index.Value.CreateView(this);
+            var indexComponent = await indexFactory.GetComponent(page);
+            return indexComponent.Value.CreateView(this);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Haondt.Web.BulmaCSS.Extensions;
 using Haondt.Web.Core.Extensions;
 using Haondt.Web.Demo;
 using Haondt.Web.Demo.Extensions;
@@ -14,6 +15,7 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services
     .AddHaondtWebCoreServices()
     .AddHaondtWebServices(builder.Configuration)
+    .UseBulmaCSS()
     .AddHaondtWebDemoServices();
 
 builder.Services.AddMvc();

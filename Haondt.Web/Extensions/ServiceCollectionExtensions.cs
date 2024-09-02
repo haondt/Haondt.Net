@@ -17,6 +17,7 @@ namespace Haondt.Web.Extensions
         public static IServiceCollection AddHaondtWebServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<IndexSettings>(configuration.GetSection(nameof(IndexSettings)));
+            services.AddSingleton<IIndexModelComponentFactory, IndexModelComponentFactory>();
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<IndexModel> { ViewPath = "~/Components/Index.cshtml" });
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
             return services;
