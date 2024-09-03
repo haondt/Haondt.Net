@@ -31,14 +31,14 @@ namespace Haondt.Web.BulmaCSS.Extensions
         {
             services.AddTransient<IBulmaCSSLayoutUpdateFactory, BulmaCSSLayoutUpdateFactory>();
             services.AddTransient<ILayoutUpdateFactory>(sp => sp.GetRequiredService<IBulmaCSSLayoutUpdateFactory>());
-            services.AddSingleton<IEventHandler, BulmaCSSEventHandler>();
+            services.AddScoped<IEventHandler, BulmaCSSEventHandler>();
             return services;
         }
 
         public static IServiceCollection AddBulmaCSSComponents(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<NavigationBarSettings>(configuration.GetSection(nameof(NavigationBarSettings)));
-            services.AddSingleton<IComponentDescriptor>(sp =>
+            services.AddScoped<IComponentDescriptor>(sp =>
             {
                 var options = sp.GetRequiredService<IOptions<NavigationBarSettings>>();
                 var indexOptions = sp.GetRequiredService<IOptions<IndexSettings>>();
@@ -58,11 +58,11 @@ namespace Haondt.Web.BulmaCSS.Extensions
                 };
             });
 
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<DefaultLayoutModel>
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<DefaultLayoutModel>
             {
                 ViewPath = "~/Components/DefaultLayout.cshtml"
             });
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<ToastModel>
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<ToastModel>
             {
                 ViewPath = "~/Components/Toast.cshtml"
             });

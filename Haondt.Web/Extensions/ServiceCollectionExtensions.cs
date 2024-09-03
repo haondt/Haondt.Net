@@ -20,10 +20,10 @@ namespace Haondt.Web.Extensions
         public static IServiceCollection AddHaondtWebServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<IndexSettings>(configuration.GetSection(nameof(IndexSettings)));
-            services.AddSingleton<IIndexModelComponentFactory, IndexModelComponentFactory>();
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<IndexModel> { ViewPath = "~/Components/Index.cshtml" });
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<AppendComponentLayoutModel> { ViewPath = "~/Components/AppendComponentLayout.cshtml" });
+            services.AddScoped<IIndexModelComponentFactory, IndexModelComponentFactory>();
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<IndexModel> { ViewPath = "~/Components/Index.cshtml" });
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<AppendComponentLayoutModel> { ViewPath = "~/Components/AppendComponentLayout.cshtml" });
             services.AddScoped<IEventPublisher, EventPublisher>();
             services.AddSingleton<IAssetProvider, AssetProvider>();
             services.AddSingleton<FileExtensionContentTypeProvider>();

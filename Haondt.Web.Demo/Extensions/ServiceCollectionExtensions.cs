@@ -7,7 +7,7 @@ namespace Haondt.Web.Demo.Extensions
     {
         public static IServiceCollection AddHaondtWebDemoServices(this IServiceCollection services)
         {
-            services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<HomeModel>(new HomeModel())
+            services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<HomeModel>(new HomeModel())
             {
                 ViewPath = "~/Components/Home.cshtml",
             });
