@@ -6,10 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
         <OutputType>Library</OutputType>
+
+	  <IsPackable>true</IsPackable>
 	  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNext" Version="5.7.0" />
+    <PackageReference Include="DotNext" Version="5.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 

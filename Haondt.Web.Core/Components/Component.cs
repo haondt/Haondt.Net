@@ -12,15 +12,15 @@ namespace Haondt.Web.Core.Components
     public class Component : IComponent
     {
         public required string ViewPath { get; init; }
-        public IComponentModel? Model { get; internal init; } 
+        public required IComponentModel Model { get; init; } 
         public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; internal init; }
     }
 
     public class Component<T> : IComponent, IComponent<T> where T : IComponentModel
     {
         public required string ViewPath { get; init; }
-        public T? Model { get; internal init; } 
+        public required T Model { get; init; } 
         public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; internal init; }
-        IComponentModel? IComponent.Model => Model;
+        IComponentModel IComponent.Model => Model;
     }
 }

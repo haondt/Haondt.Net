@@ -24,10 +24,12 @@ namespace Haondt.Web.Extensions
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<IndexModel> { ViewPath = "~/Components/Index.cshtml" });
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<LoaderModel> { ViewPath = "~/Components/Loader.cshtml" });
             services.AddSingleton<IComponentDescriptor>(new ComponentDescriptor<AppendComponentLayoutModel> { ViewPath = "~/Components/AppendComponentLayout.cshtml" });
-            services.AddSingleton<IEventPublisher, EventPublisher>();
+            services.AddScoped<IEventPublisher, EventPublisher>();
             services.AddSingleton<IAssetProvider, AssetProvider>();
             services.AddSingleton<FileExtensionContentTypeProvider>();
             services.AddTransient<IMemoryCache, MemoryCache>();
+            services.AddScoped<IAssetHandler, AssetHandler>();
+            services.AddScoped<IComponentHandler, ComponentHandler>();
             return services;
         }
     }

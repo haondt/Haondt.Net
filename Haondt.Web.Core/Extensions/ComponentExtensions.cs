@@ -28,5 +28,6 @@ namespace Haondt.Web.Core.Extensions
 
             return controller.View(component.ViewPath, component.Model);
         }
+
     }
 }

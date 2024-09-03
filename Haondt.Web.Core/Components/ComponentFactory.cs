@@ -94,13 +94,13 @@ namespace Haondt.Web.Core.Components
             if (descriptor.DefaultModelFactory.HasValue)
             {
                 if (providedRequestData != null)
-                    return new(await descriptor.DefaultModelFactory.Value(this, providedRequestData));
+                    return await descriptor.DefaultModelFactory.Value(this, providedRequestData);
                 else if (_httpContext.HttpContext != null)
-                    return new(await descriptor.DefaultModelFactory.Value(this, _httpContext.HttpContext.Request.AsRequestData()));
+                    return await descriptor.DefaultModelFactory.Value(this, _httpContext.HttpContext.Request.AsRequestData());
             }
 
             if (descriptor.DefaultNoRequestDataModelFactory.HasValue)
-                return new(await descriptor.DefaultNoRequestDataModelFactory.Value(this));
+                return await descriptor.DefaultNoRequestDataModelFactory.Value(this);
 
             return new(new InvalidOperationException($"Unable to render component {descriptor.Identity}"));
         }
@@ -113,13 +113,13 @@ namespace Haondt.Web.Core.Components
             if (descriptor.DefaultModelFactory.HasValue)
             {
                 if (providedRequestData != null)
-                    return new(await descriptor.DefaultModelFactory.Value(this, providedRequestData));
+                    return await descriptor.DefaultModelFactory.Value(this, providedRequestData);
                 else if (_httpContext.HttpContext != null)
-                    return new(await descriptor.DefaultModelFactory.Value(this, _httpContext.HttpContext.Request.AsRequestData()));
+                    return await descriptor.DefaultModelFactory.Value(this, _httpContext.HttpContext.Request.AsRequestData());
             }
 
             if (descriptor.DefaultNoRequestDataModelFactory.HasValue)
-                return new(await descriptor.DefaultNoRequestDataModelFactory.Value(this));
+                return await descriptor.DefaultNoRequestDataModelFactory.Value(this);
 
             return new(new InvalidOperationException($"Unable to render component {descriptor.Identity}"));
         }

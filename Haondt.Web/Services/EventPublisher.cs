@@ -7,12 +7,10 @@ namespace Haondt.Web.Services
 {
     public class EventPublisher(IEnumerable<IEventHandler> handlers, IComponentFactory componentFactory) : IEventPublisher
     {
-        private readonly List<IEventHandler> _handlers = handlers.ToList();
-
         public async Task<Result<Optional<IComponent>>> PublishAsync(string eventName, IRequestData requestData)
         {
             var components = new List<IComponent>();
-            foreach(var handler in _handlers)
+            foreach(var handler in handlers)
             {
                 var result = await handler.HandleAsync(eventName, requestData);
                 if (!result.IsSuccessful)
