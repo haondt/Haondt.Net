@@ -80,13 +80,13 @@ namespace Haondt.Web.BulmaCSS.Extensions
 
         public static IServiceCollection AddBulmaCSSHeadEntries(this IServiceCollection services)
         {
-            services.AddSingleton<IHeadEntryDescriptor>(new StyleSheetDescriptor
+            services.AddScoped<IHeadEntryDescriptor>(_ => new StyleSheetDescriptor
             {
                 Uri = "https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
             });
 
             var assemblyPrefix = typeof(ServiceCollectionExtensions).Assembly.GetName().Name;
-            services.AddSingleton<IHeadEntryDescriptor>(sp => new StyleSheetDescriptor
+            services.AddScoped<IHeadEntryDescriptor>(sp => new StyleSheetDescriptor
             {
                 Uri = $"/_asset/{assemblyPrefix}.wwwroot.styles.css"
             });
