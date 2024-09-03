@@ -7,7 +7,9 @@ namespace Haondt.Web.Core.Extensions
         public static IResponseData AsResponseData(this HttpResponse response)
         {
             return new TransientResponseData(
-                () => response.Headers);
+                () => response.Headers,
+                sc => response.StatusCode = sc,
+                () => response.StatusCode);
         }
 
 

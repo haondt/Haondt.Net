@@ -1,4 +1,5 @@
 ﻿using Haondt.Web.Core.Components;
+using Haondt.Web.Core.Services;
 
 namespace Haondt.Web.Core.Extensions
 {
@@ -8,6 +9,7 @@ namespace Haondt.Web.Core.Extensions
         {
             services.AddHttpContextAccessor();
             services.AddSingleton<IComponentFactory, ComponentFactory>();
+            services.AddSingleton<IExceptionActionResultFactory, ExceptionActionResultFactory>();
             return services;
         }
     }
