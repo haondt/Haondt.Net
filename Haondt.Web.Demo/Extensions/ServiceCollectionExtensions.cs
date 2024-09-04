@@ -1,5 +1,6 @@
 ﻿using Haondt.Web.Core.Components;
 using Haondt.Web.Demo.Components;
+using Haondt.Web.Services;
 
 namespace Haondt.Web.Demo.Extensions
 {
@@ -9,7 +10,7 @@ namespace Haondt.Web.Demo.Extensions
         {
             services.AddScoped<IComponentDescriptor>(_ => new ComponentDescriptor<HomeModel>(new HomeModel())
             {
-                ViewPath = "~/Components/Home.cshtml",
+                ViewPath = "~/Components/Home.cshtml"
             });
             return services;
         }
