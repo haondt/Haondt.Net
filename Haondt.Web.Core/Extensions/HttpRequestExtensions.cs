@@ -57,8 +57,15 @@ namespace Haondt.Web.Core.Extensions
 
         public static Result<T> GetValue<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
         {
-            var uncastedValue = values.Single(kvp => kvp.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).Value.Last(s => !string.IsNullOrEmpty(s));
-            return ConvertValue<T>(uncastedValue!);
+            var kvp = values
+                .Cast<KeyValuePair<string, StringValues>?>()
+                .FirstOrDefault(kvp => kvp?.Key.Equals(key, StringComparison.OrdinalIgnoreCase) ?? false, null);
+
+            var stringValue = kvp?.Value.Where(s => !string.IsNullOrEmpty(s)).LastOrDefault(s => !string.IsNullOrEmpty(s), null);
+            if (stringValue == null)
+                return new(new KeyNotFoundException(key));
+
+            return ConvertValue<T>(stringValue!);
         }
 
         public static T GetValueOrDefault<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key, T defaultValue)
