@@ -9,7 +9,7 @@ namespace Haondt.Web.Components.Services
     public class NavigationBarSettings
     {
         public string? LogoUri { get; set; }
-        public List<NavigationBarEntry> NavigationBarEntries { get; set; } = [];
+        public List<NavigationBarEntry> Entries { get; set; } = [];
     }
     public class NavigationBarEntry
     {

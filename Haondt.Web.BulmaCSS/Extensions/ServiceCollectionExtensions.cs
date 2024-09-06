@@ -46,7 +46,7 @@ namespace Haondt.Web.BulmaCSS.Extensions
                 {
                     LogoClickUri = indexOptions.Value.HomePage,
                     LogoUri = options.Value.LogoUri,
-                    NavigationBarEntries = options.Value.NavigationBarEntries.Select(e => new Components.NavigationBarEntry
+                    NavigationBarEntries = options.Value.Entries.Select(e => new Components.NavigationBarEntry
                     {
                         Title = e.Title,
                         PushUrl = e.PushUrl,
