@@ -7,7 +7,7 @@
             <a class="navbar-item" href="@Model.LogoClickUri.Value">
             @if (Model.LogoUri)
             {
-                <img src="@Model.LogoUri" height="125"/>
+                <img src="@Model.LogoUri" style="height:25px;"/>
             }
             </a>
         }
@@ -15,7 +15,9 @@
         {
             @if (Model.LogoUri)
             {
-                <img src="@Model.LogoUri" height="125"/>
+                <div class="navbar-item">
+                    <img src="@Model.LogoUri" style="height:25px;"/>
+                </div>
             }
         }
          <a role="button" class="navbar-burger" 

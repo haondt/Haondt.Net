@@ -2,7 +2,7 @@
 @model Haondt.Web.Components.PageModel
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="overflow:auto;">
     <head>
         <title></title>
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
@@ -14,7 +14,7 @@
         @Html.Raw(headEntry)
     }
     </head>
-    <body>
+    <body style="display:flex;flex-direction:column;overflow:auto;height:100vh;">
         @await Html.PartialAsync(Model.Content)
     </body>
 </html>

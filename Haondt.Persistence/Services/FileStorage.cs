@@ -1,5 +1,6 @@
 ﻿using DotNext;
 using Haondt.Identity.StorageKey;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
@@ -7,23 +8,24 @@ namespace Haondt.Persistence.Services
 {
     public class DataObject
     {
-        public Dictionary<string, object?> Values = [];
+        public Dictionary<string, object?> Values { get; set; } = [];
     }
 
     public class FileStorage : IStorage
     {
-        public string datafile = "./data.json";
-        private readonly JsonSerializerOptions _serializerSettings;
-        private DataObject? _dataCache;
-        private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+        protected readonly string _dataFile;
+        protected readonly JsonSerializerOptions _serializerSettings;
+        protected DataObject? _dataCache;
+        protected readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
-        public FileStorage()
+        public FileStorage(IOptions<HaondtFileStorageSettings> options)
         {
+            _dataFile = options.Value.DataFile;
             _serializerSettings = new JsonSerializerOptions();
             ConfigureSerializerSettings(_serializerSettings);
         }
 
-        private static JsonSerializerOptions ConfigureSerializerSettings(JsonSerializerOptions settings)
+        protected virtual JsonSerializerOptions ConfigureSerializerSettings(JsonSerializerOptions settings)
         {
             settings.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
             settings.WriteIndented = true;
@@ -52,13 +54,13 @@ namespace Haondt.Persistence.Services
             if (_dataCache != null)
                 return _dataCache;
 
-            if (!File.Exists(datafile))
+            if (!File.Exists(_dataFile))
             {
                 _dataCache = new DataObject();
                 return _dataCache;
             }
 
-            using var reader = new StreamReader(datafile, new FileStreamOptions
+            using var reader = new StreamReader(_dataFile, new FileStreamOptions
             {
                 Access = FileAccess.Read,
                 BufferSize = 4096,
@@ -74,7 +76,7 @@ namespace Haondt.Persistence.Services
 
         protected async Task<Optional<Exception>> SetDataAsync(DataObject data)
         {
-            using var writer = new StreamWriter(datafile, new FileStreamOptions
+            using var writer = new StreamWriter(_dataFile, new FileStreamOptions
             {
                 Access = FileAccess.Write,
                 BufferSize = 4096,
@@ -109,7 +111,12 @@ namespace Haondt.Persistence.Services
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
-                return new Result<T>((T)data.Values[StorageKeyConvert.Serialize(key)]!);
+                var stringKey = StorageKeyConvert.Serialize(key);
+                if (!data.Values.TryGetValue(stringKey, out var value))
+                    return new Result<T>(new KeyNotFoundException(StorageKeyConvert.Serialize(key)));
+                if (value is not T castedValue)
+                    return new (new InvalidCastException($"Cannot convert {key} to type {typeof(T)}"));
+                return new(castedValue);
             });
 
         public Task<Optional<Exception>> Set<T>(StorageKey<T> key, T value) =>

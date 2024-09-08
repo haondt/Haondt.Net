@@ -16,6 +16,7 @@ namespace Haondt.Persistence.Extensions
                     services.AddSingleton<IStorage, MemoryStorage>();
                     break;
                 case PersistenceDrivers.File:
+                    services.Configure<HaondtFileStorageSettings>(configuration.GetSection(nameof(HaondtFileStorageSettings)));
                     services.AddSingleton<IStorage, FileStorage>();
                     break;
             }

@@ -1,4 +1,10 @@
-﻿.toast {
+﻿@media(prefers-color-scheme: dark) {
+    html {
+        color-scheme: dark;
+    }
+}
+
+.toast {
     opacity: 0;
     transition: opacity 0.5s ease;
 }
