@@ -127,15 +127,5 @@ namespace Haondt.Persistence.Services
                 await SetDataAsync(data);
                 return new Optional<Exception>();
             });
-
-        public Task<Result<T>> TryGet<T>(StorageKey<T> key) =>
-            TryAcquireSemaphoreAnd(async () =>
-            {
-                var data = await GetDataAsync();
-                var serializedKey = StorageKeyConvert.Serialize(key);
-                if (data.Values.TryGetValue(serializedKey, out var value) && value is T castedValue)
-                    return new Result<T>(castedValue);
-                return new Result<T>(new KeyNotFoundException(serializedKey));
-            });
     }
 }
