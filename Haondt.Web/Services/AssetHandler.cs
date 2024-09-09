@@ -1,6 +1,6 @@
-﻿using DotNext;
-using DotNext.Collections.Generic;
+﻿using Haondt.Core.Models;
 using Haondt.Web.Assets;
+using Haondt.Web.Core.Reasons;
 using Haondt.Web.Extensions;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -13,21 +13,22 @@ namespace Haondt.Web.Services
             { "._hs", "text/hyperscript" }
         };
 
-        public async Task<Result<(byte[] Content, string ContentType)>> HandleAsync(string assetPath)
+        public async Task<Result<(byte[] Content, string ContentType), WebReason>> HandleAsync(string assetPath)
         {
             if (assetPath.Contains('/') || assetPath.Contains('\\'))
-                return new(new BadHttpRequestException("Invalid path."));
+                return new(WebReason.NotFound);
 
-            var contentTypeResult = _customContentTypes.TryGetValue(Path.GetExtension(assetPath))
-                | contentTypeProvider.TryGetContentType(assetPath);
+            var foundContentType = _customContentTypes.TryGetValue(Path.GetExtension(assetPath), out var customContentType);
+            if (!foundContentType)
+                foundContentType = contentTypeProvider.TryGetContentType(assetPath, out customContentType);
 
-            if (!contentTypeResult.HasValue)
-                return new(new BadHttpRequestException("Unsupported file type"));
+            if (!foundContentType)
+                return new(WebReason.BadRequest);
 
             if (await assetProvider.GetAssetAsync(assetPath) is not { IsSuccessful: true, Value: var asset })
-                return new (new KeyNotFoundException(assetPath));
+                return new(WebReason.NotFound);
 
-            return new((asset, contentTypeResult.Value));
+            return new((asset, customContentType!));
         }
     }
 }

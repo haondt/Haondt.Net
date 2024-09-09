@@ -1,4 +1,4 @@
-﻿using DotNext;
+﻿using Haondt.Core.Models;
 using Haondt.Web.Core.Http;
 
 namespace Haondt.Web.Core.Components

@@ -1,4 +1,4 @@
-﻿using DotNext;
+﻿using Haondt.Core.Models;
 using Haondt.Web.Core.Components;
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,6 @@ namespace Haondt.Web.BulmaCSS.Components
     {
         public required string Title { get; set; }
         public required string Url { get; set; }
-        public Optional<string> PushUrl { get; set; } = Optional<string>.None;
+        public Optional<string> PushUrl { get; set; } = new Optional<string>();
     }
 }

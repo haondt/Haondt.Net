@@ -23,7 +23,7 @@ namespace Haondt.Web.Core.Middleware
             catch (Exception ex)
             {
                 var actionResult = await _actionResultFactory.CreateAsync(ex, context);
-                await actionResult.Value.ExecuteResultAsync(new Microsoft.AspNetCore.Mvc.ActionContext
+                await actionResult.ExecuteResultAsync(new Microsoft.AspNetCore.Mvc.ActionContext
                 {
                     HttpContext = context,
                     RouteData = context.GetRouteData(),

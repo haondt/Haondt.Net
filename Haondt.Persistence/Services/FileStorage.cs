@@ -1,4 +1,4 @@
-﻿using DotNext;
+﻿using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -74,7 +74,7 @@ namespace Haondt.Persistence.Services
             return _dataCache;
         }
 
-        protected async Task<Optional<Exception>> SetDataAsync(DataObject data)
+        protected async Task SetDataAsync(DataObject data)
         {
             using var writer = new StreamWriter(_dataFile, new FileStreamOptions
             {
@@ -87,45 +87,43 @@ namespace Haondt.Persistence.Services
             var text = JsonSerializer.Serialize(data, _serializerSettings);
             await writer.WriteAsync(text);
             _dataCache = data;
-            return new();
         }
 
-        public Task<Result<bool>> ContainsKey(StorageKey key) =>
+        public Task<bool> ContainsKey(StorageKey key) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
-                return new Result<bool>(data.Values.ContainsKey(StorageKeyConvert.Serialize(key)));
+                return data.Values.ContainsKey(StorageKeyConvert.Serialize(key));
             });
 
-        public Task<Optional<Exception>> Delete(StorageKey key) =>
+        public Task<Result<StorageResultReason>> Delete(StorageKey key) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 if (!data.Values.Remove(StorageKeyConvert.Serialize(key)))
-                    return new Optional<Exception>();
+                    return new(StorageResultReason.NotFound);
                 await SetDataAsync(data);
-                return new Optional<Exception>();
+                return new Result<StorageResultReason>();
             });
 
-        public Task<Result<T>> Get<T>(StorageKey<T> key) =>
+        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 var stringKey = StorageKeyConvert.Serialize(key);
                 if (!data.Values.TryGetValue(stringKey, out var value))
-                    return new Result<T>(new KeyNotFoundException(StorageKeyConvert.Serialize(key)));
+                    return new(StorageResultReason.NotFound);
                 if (value is not T castedValue)
-                    return new (new InvalidCastException($"Cannot convert {key} to type {typeof(T)}"));
-                return new(castedValue);
+                    throw new InvalidCastException($"Cannot convert {key} to type {typeof(T)}");
+                return new Result<T, StorageResultReason>(castedValue);
             });
 
-        public Task<Optional<Exception>> Set<T>(StorageKey<T> key, T value) =>
+        public Task Set<T>(StorageKey<T> key, T value) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 data.Values[StorageKeyConvert.Serialize(key)] = value;
                 await SetDataAsync(data);
-                return new Optional<Exception>();
             });
     }
 }

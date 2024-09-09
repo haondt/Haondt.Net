@@ -1,4 +1,4 @@
-﻿using DotNext;
+﻿using Haondt.Core.Models;
 using Haondt.Web.Core.Http;
 using Microsoft.Extensions.Primitives;
 
@@ -16,31 +16,31 @@ namespace Haondt.Web.Core.Extensions
         }
 
         private delegate bool ParseMethod<TResult>(string? value, out TResult result);
-        private static Result<T> ConvertValue<T>(string? value)
+        private static T ConvertValue<T>(string? value)
         {
             var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
 
 
-            Result<T> TryParse<TParser>(ParseMethod<TParser> parseMethod)
+            T TryParse<TParser>(ParseMethod<TParser> parseMethod)
             {
                 if (!parseMethod(value, out TParser parsedValue))
-                    return new(new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}"));
+                    throw new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}");
                 if (parsedValue is not T castedValue)
-                    return new(new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}"));
-                return new(castedValue);
+                    throw new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}");
+                return castedValue;
             }
 
-            Result<T> FallBackTryParse()
+            T FallBackTryParse()
             {
                 if (targetType == typeof(Guid))
                     return TryParse<Guid>(Guid.TryParse);
-                return new(new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}"));
+                throw new InvalidCastException($"Cannot convert {value} to {typeof(T).FullName}");
             }
 
             return Type.GetTypeCode(targetType) switch
             {
                 TypeCode.Boolean => TryParse<bool>(bool.TryParse),
-                TypeCode.String => new Result<T>((T)(object)value!),
+                TypeCode.String => (T)(object)value!,
                 TypeCode.Int16 => TryParse<int>(int.TryParse),
                 TypeCode.Int32 => TryParse<int>(int.TryParse),
                 TypeCode.Int64 => TryParse<int>(int.TryParse),
@@ -55,7 +55,14 @@ namespace Haondt.Web.Core.Extensions
 
         }
 
-        public static Result<T> GetValue<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
+        public static T GetValue<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
+        {
+            var result = values.TryGetValue<T>(key);
+            if (result.HasValue)
+                return result.Value;
+            throw new KeyNotFoundException(key);
+        }
+        public static Optional<T> TryGetValue<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
         {
             var kvp = values
                 .Cast<KeyValuePair<string, StringValues>?>()
@@ -63,20 +70,20 @@ namespace Haondt.Web.Core.Extensions
 
             var stringValue = kvp?.Value.Where(s => !string.IsNullOrEmpty(s)).LastOrDefault(s => !string.IsNullOrEmpty(s), null);
             if (stringValue == null)
-                return new(new KeyNotFoundException(key));
+                return new();
 
-            return ConvertValue<T>(stringValue!);
+            return new(ConvertValue<T>(stringValue!));
         }
 
         public static T GetValueOrDefault<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key, T defaultValue)
         {
-            var result = GetValue<T>(values, key);
-            if (result.IsSuccessful)
+            var result = values.TryGetValue<T>(key);
+            if (result.HasValue)
                 return result.Value;
             return defaultValue;
         }
 
-        public static Result<IEnumerable<T>> GetValues<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
+        public static IEnumerable<T> GetValues<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key)
         {
             var kvp = values
                 .Cast<KeyValuePair<string, StringValues>?>()
@@ -84,17 +91,9 @@ namespace Haondt.Web.Core.Extensions
 
             var stringValues = kvp?.Value.Where(s => !string.IsNullOrEmpty(s)).Where(s => !string.IsNullOrEmpty(s));
             if (stringValues == null)
-                return new([]);
+                return [];
 
-            List<T> result = [];
-            foreach (var stringValue in stringValues)
-            {
-                var conversionResult = ConvertValue<T>(stringValue);
-                if (!conversionResult.IsSuccessful)
-                    return new(conversionResult.Error);
-                result.Append(conversionResult.Value);
-            }
-            return result;
+            return stringValues.Select(v => ConvertValue<T>(v));
         }
     }
 }

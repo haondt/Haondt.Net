@@ -4,10 +4,9 @@ namespace Haondt.Web.Services
 {
     public class ComponentHandler(IComponentFactory componentFactory) : IComponentHandler
     {
-        public async Task<IComponent> HandleAsync(string componentIdentity)
+        public Task<IComponent> HandleAsync(string componentIdentity)
         {
-            var component = await componentFactory.GetComponent(componentIdentity);
-            return component.Value;
+            return componentFactory.GetComponent(componentIdentity);
         }
     }
 }

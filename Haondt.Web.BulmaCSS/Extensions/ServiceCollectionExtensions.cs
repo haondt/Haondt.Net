@@ -44,12 +44,12 @@ namespace Haondt.Web.BulmaCSS.Extensions
                 var indexOptions = sp.GetRequiredService<IOptions<IndexSettings>>();
                 return new ComponentDescriptor<NavigationBarModel>(new NavigationBarModel
                 {
-                    LogoClickUri = indexOptions.Value.HomePage,
-                    LogoUri = options.Value.LogoUri,
+                    LogoClickUri = new(indexOptions.Value.HomePage),
+                    LogoUri = string.IsNullOrEmpty(options.Value.LogoUri) ? new () : new(options.Value.LogoUri),
                     NavigationBarEntries = options.Value.Entries.Select(e => new Components.NavigationBarEntry
                     {
                         Title = e.Title,
-                        PushUrl = e.PushUrl,
+                        PushUrl = string.IsNullOrEmpty(e.PushUrl) ? new () : new(e.PushUrl),
                         Url = e.Url,
                     }).ToList()
                 })

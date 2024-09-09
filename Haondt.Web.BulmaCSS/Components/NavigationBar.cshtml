@@ -2,21 +2,21 @@
 
 <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-        @if(Model.LogoClickUri)
+        @if(Model.LogoClickUri.HasValue)
         {
             <a class="navbar-item" href="@Model.LogoClickUri.Value">
-            @if (Model.LogoUri)
+            @if (Model.LogoUri.HasValue)
             {
-                <img src="@Model.LogoUri" style="height:25px;"/>
+                <img src="@Model.LogoUri.Value" style="height:25px;"/>
             }
             </a>
         }
         else
         {
-            @if (Model.LogoUri)
+            @if (Model.LogoUri.HasValue)
             {
                 <div class="navbar-item">
-                    <img src="@Model.LogoUri" style="height:25px;"/>
+                    <img src="@Model.LogoUri.Value" style="height:25px;"/>
                 </div>
             }
         }

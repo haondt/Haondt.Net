@@ -1,5 +1,4 @@
-﻿using DotNext;
-using Haondt.Web.BulmaCSS.Components;
+﻿using Haondt.Web.BulmaCSS.Components;
 using Haondt.Web.Core.Components;
 using Haondt.Web.Services;
 
@@ -7,9 +6,9 @@ namespace Haondt.Web.BulmaCSS.Services
 {
     public class BulmaCSSLayoutUpdateBuilder(BulmaCSSLayoutUpdateFactory parent, IComponentFactory componentFactory) : IBulmaCSSLayoutUpdateFactory
     {
-        private List<Func<List<IComponent>, Task<Result<List<IComponent>>>>> _buildSteps = [];
+        private List<Func<List<IComponent>, Task<List<IComponent>>>> _buildSteps = [];
 
-        public Task<Result<IComponent>> BuildAsync()
+        public Task<IComponent> BuildAsync()
         {
             return parent.BuildAsync(_buildSteps);
         }
@@ -19,18 +18,14 @@ namespace Haondt.Web.BulmaCSS.Services
             _buildSteps.Add(async components =>
             {
                 var navigationBar = await componentFactory.GetPlainComponent<NavigationBarModel>();
-                if (!navigationBar.IsSuccessful)
-                    return new(navigationBar.Error);
 
                 var layout = await componentFactory.GetPlainComponent(new Components.DefaultLayoutModel
                 {
                     Content = content,
-                    NavigationBar = navigationBar.Value
+                    NavigationBar = navigationBar
                 });
-                if (!layout.IsSuccessful)
-                    return new(layout.Error);
 
-                components.Add(layout.Value);
+                components.Add(layout);
                 return components;
             });
 
@@ -51,9 +46,7 @@ namespace Haondt.Web.BulmaCSS.Services
                     Message = message,
                     Severity = severity
                 });
-                if (!toast.IsSuccessful)
-                    return new(toast.Error);
-                components.Add(toast.Value);
+                components.Add(toast);
                 return components;
             });
 

@@ -11,8 +11,11 @@
 	  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNext" Version="5.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Haondt.Core\Haondt.Core.csproj" />
   </ItemGroup>
 
 </Project>

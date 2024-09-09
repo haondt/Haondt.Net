@@ -17,9 +17,9 @@ namespace Haondt.Web.Controllers
                 .Build()(httpContext.HttpContext!.Response.Headers);
 
             var result = await eventPublisher.PublishAsync(eventName, httpContext.HttpContext!.Request.AsRequestData());
-            if (!result.Value.HasValue)
-                return Ok();
-            return result.Value.Value.CreateView(this);
+            if (result.HasValue)
+                return result.Value.CreateView(this);
+            return Ok();
         }
     }
 }

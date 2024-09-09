@@ -1,5 +1,4 @@
 ﻿
-using DotNext;
 using Haondt.Web.Core.Components;
 
 namespace Haondt.Web.Services
@@ -8,7 +7,7 @@ namespace Haondt.Web.Services
     {
         public ILayoutUpdateFactory GetInitialLayout(IComponent content);
         public ILayoutUpdateFactory SetContent(IComponent component);
-        public Task<Result<IComponent>> BuildAsync();
+        public Task<IComponent> BuildAsync();
     }
 
 }

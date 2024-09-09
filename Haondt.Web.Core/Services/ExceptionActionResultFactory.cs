@@ -1,12 +1,11 @@
-﻿using DotNext;
-using Haondt.Web.Core.Exceptions;
+﻿using Haondt.Web.Core.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Haondt.Web.Core.Services
 {
     public class ExceptionActionResultFactory : IExceptionActionResultFactory
     {
-        public Task<Result<IActionResult>> CreateAsync(Exception exception, HttpContext context)
+        public Task<IActionResult> CreateAsync(Exception exception, HttpContext context)
         {
             var result = exception switch
             {
@@ -15,7 +14,7 @@ namespace Haondt.Web.Core.Services
                 MissingComponentException => new ObjectResult(exception.ToString()) { StatusCode = 404 },
                 _ => new ObjectResult(exception.ToString()) { StatusCode = 500 }
             };
-            return Task.FromResult<Result<IActionResult>>(new(result)); 
+            return Task.FromResult<IActionResult>(result);
         }
     }
 }

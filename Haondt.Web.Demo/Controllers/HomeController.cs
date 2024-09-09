@@ -18,7 +18,7 @@ namespace Haondt.Web.Demo.Controllers
         public async Task<IActionResult> Get()
         {
             var indexComponent = await pageFactory.GetComponent<HomeModel>();
-            return indexComponent.Value.CreateView(this);
+            return indexComponent.CreateView(this);
         }
     }
 }

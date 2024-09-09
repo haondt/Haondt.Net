@@ -1,4 +1,5 @@
-﻿using DotNext;
+﻿using Haondt.Core.Models;
+using Haondt.Web.Core.Reasons;
 using System.Reflection;
 
 namespace Haondt.Web.Assets
@@ -8,13 +9,12 @@ namespace Haondt.Web.Assets
         private readonly Lazy<HashSet<string>> _paths = new (() => assembly.GetManifestResourceNames().ToHashSet());
         private readonly Assembly _assembly = assembly;
 
-        public async Task<Result<byte[]>> GetAssetAsync(string assetPath)
+        public async Task<Result<byte[], WebReason>> GetAssetAsync(string assetPath)
         {
             if (!_paths.Value.Contains(assetPath))
-                return new(new FileNotFoundException(assetPath));
-            using var stream = _assembly.GetManifestResourceStream(assetPath);
-            if (stream == null)
-                return new(new FileNotFoundException(assetPath));
+                return new (WebReason.NotFound);
+            using var stream = _assembly.GetManifestResourceStream(assetPath) 
+                ?? throw new FileNotFoundException($"failed to load asset {assetPath}");
             using var memoryStream = new MemoryStream();
             await stream.CopyToAsync(memoryStream);
             return new(memoryStream.ToArray());
