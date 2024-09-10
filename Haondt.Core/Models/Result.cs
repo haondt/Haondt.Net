@@ -9,23 +9,24 @@ namespace Haondt.Core.Models
 {
     public readonly struct Result<T, TReason>
     {
-        private readonly bool _success = true;
+        private readonly bool _fail;
         private readonly T _value;
         private readonly TReason _reason;
 
-        public Result(T value) { _value = value; _success = true; _reason = default!; }
-        public Result(TReason reason) { _value = default!; _success = false; _reason = reason; }
+        public Result(T value) { _value = value; _fail = false; _reason = default!; }
+        public Result() { _value = default!; _fail = false; _reason = default!; }
+        public Result(TReason reason) { _value = default!; _fail = true; _reason = reason; }
 
         [MemberNotNullWhen(false, nameof(Reason))]
-        public bool IsSuccessful => _success;
+        public bool IsSuccessful => _fail;
 
         public readonly T Value
         {
             get
             {
-                if (_success)
-                    return _value;
-                throw new InvalidOperationException("Result was not successful");
+                if (_fail)
+                    throw new InvalidOperationException("Result was not successful");
+                return _value;
             }
         }
 
@@ -33,9 +34,9 @@ namespace Haondt.Core.Models
         {
             get
             {
-                if (_success)
-                    throw new InvalidOperationException("Result was successful");
-                return _reason;
+                if (_fail)
+                    return _reason;
+                throw new InvalidOperationException("Result was successful");
             }
         }
 
@@ -54,35 +55,36 @@ namespace Haondt.Core.Models
 
     public readonly struct Result<TReason>
     {
-        private readonly bool _success = true;
+        private readonly bool _fail;
         private readonly TReason _reason;
 
         [MemberNotNullWhen(false, nameof(Reason))]
-        public readonly bool IsSuccessful => _success;
-        public Result(TReason reason) { _reason = reason; _success = false; }
+        public readonly bool IsSuccessful => !_fail;
+        public Result(TReason reason) { _reason = reason; _fail = true; }
+        public Result() { _reason = default!; _fail = false; }
 
         public readonly TReason? Reason
         {
             get
             {
-                if (_success)
-                    throw new InvalidOperationException("Result was successful");
-                return _reason;
+                if (_fail)
+                    return _reason;
+                throw new InvalidOperationException("Result was successful");
             }
         }
 
         public Result<T, TReason> WithValue<T>(T value)
         {
-            if (_success)
-                return new Result<T, TReason>(value);
-            return new Result<T, TReason>(_reason);
+            if (!_fail)
+                return new Result<T, TReason>(_reason);
+            return new Result<T, TReason>(value);
         }
 
         public Result<T, TReason> WithValue<T>()
         {
-            if (_success)
-                throw new ArgumentException($"result was successful, and requires a value to upgrade to {typeof(Result<T, TReason>)}");
-            return new Result<T, TReason>(_reason);
+            if (!_fail)
+                return new Result<T, TReason>(_reason);
+            throw new ArgumentException($"result was successful, and requires a value to upgrade to {typeof(Result<T, TReason>)}");
         }
 
     }
