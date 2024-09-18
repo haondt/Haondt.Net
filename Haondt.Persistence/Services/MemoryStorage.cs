@@ -15,7 +15,7 @@ namespace Haondt.Persistence.Services
                 : new(StorageResultReason.NotFound));
         }
 
-        Task<Result<T, StorageResultReason>> IStorage.Get<T>(StorageKey<T> key)
+        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key)
         {
             if (!_storage.TryGetValue(key, out var value))
                 return Task.FromResult<Result<T, StorageResultReason>>(new(StorageResultReason.NotFound));

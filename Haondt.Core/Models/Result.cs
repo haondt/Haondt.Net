@@ -18,7 +18,7 @@ namespace Haondt.Core.Models
         public Result(TReason reason) { _value = default!; _fail = true; _reason = reason; }
 
         [MemberNotNullWhen(false, nameof(Reason))]
-        public bool IsSuccessful => _fail;
+        public bool IsSuccessful => !_fail;
 
         public readonly T Value
         {
