@@ -7,4 +7,8 @@
 	  <IsPackable>true</IsPackable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Haondt.Core\Haondt.Core.csproj" />
+  </ItemGroup>
+
 </Project>

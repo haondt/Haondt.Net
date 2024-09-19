@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 namespace Haondt.Identity.StorageKey
 {
 
-    [TypeConverter(typeof(StorageKeyStringConverter))]
     public class StorageKey : IEquatable<StorageKey>
     {
         public IReadOnlyList<StorageKeyPart> Parts { get; }

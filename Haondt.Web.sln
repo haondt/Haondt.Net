@@ -13,11 +13,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.BulmaCSS", "Haon
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Web.Components", "Haondt.Web.Components\Haondt.Web.Components.csproj", "{25E08061-914C-4367-97F7-DB6332383C5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Identity", "Haondt.Identity\Haondt.Identity.csproj", "{D9467F54-8A3C-419A-882D-6CC1782E9D61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Identity", "Haondt.Identity\Haondt.Identity.csproj", "{D9467F54-8A3C-419A-882D-6CC1782E9D61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Persistence", "Haondt.Persistence\Haondt.Persistence.csproj", "{389909ED-8C8B-4575-9327-28C2B0EF1D3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Persistence", "Haondt.Persistence\Haondt.Persistence.csproj", "{389909ED-8C8B-4575-9327-28C2B0EF1D3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Core", "Haondt.Core\Haondt.Core.csproj", "{75DDC3A8-E6B5-4E7D-83A3-BE4B577A7040}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Core", "Haondt.Core\Haondt.Core.csproj", "{75DDC3A8-E6B5-4E7D-83A3-BE4B577A7040}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Identity.Tests", "Haondt.Identity.Tests\Haondt.Identity.Tests.csproj", "{3207ABA6-9ABE-4714-B48E-1BD61B737971}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{480E1205-91EE-4CF3-9448-A9311A330882}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,9 +61,16 @@ Global
 		{75DDC3A8-E6B5-4E7D-83A3-BE4B577A7040}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75DDC3A8-E6B5-4E7D-83A3-BE4B577A7040}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75DDC3A8-E6B5-4E7D-83A3-BE4B577A7040}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3207ABA6-9ABE-4714-B48E-1BD61B737971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3207ABA6-9ABE-4714-B48E-1BD61B737971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3207ABA6-9ABE-4714-B48E-1BD61B737971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3207ABA6-9ABE-4714-B48E-1BD61B737971}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3207ABA6-9ABE-4714-B48E-1BD61B737971} = {480E1205-91EE-4CF3-9448-A9311A330882}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8FA55469-8DD9-473E-BBA7-2E42987146F2}
