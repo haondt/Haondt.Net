@@ -4,4 +4,11 @@ tasks:
       - source: push
     packages:
       - csproj: ./Haondt.Core/Haondt.Core.csproj
-
+      - csproj: ./Haondt.Identity/Haondt.Identity.csproj
+      - csproj: ./Haondt.Persistence/Haondt.Persistence.csproj
+      - csproj: ./Haondt.Web.BulmaCSS/Haondt.Web.BulmaCSS.csproj
+      - csproj: ./Haondt.Web/Haondt.Web.csproj
+      - csproj: ./Haondt.Web.Components/Haondt.Web.Components.csproj
+      - csproj: ./Haondt.Web.Core/Haondt.Web.Core.csproj
+    registries:
+      - gitlab
