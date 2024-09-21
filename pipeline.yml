@@ -1,0 +1,7 @@
+tasks:
+  - type: dotnet-build
+    auto:
+      - source: push
+    packages:
+      - csproj: ./Haondt.Core/Haondt.Core.csproj
+
