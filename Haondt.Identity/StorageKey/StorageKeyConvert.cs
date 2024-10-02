@@ -6,6 +6,8 @@ namespace Haondt.Identity.StorageKey
 {
     public static class StorageKeyConvert
     {
+        public static StorageKeySerializerSettings? DefaultSerializerSettings { get; set; }
+
         public static string Serialize(StorageKey storageKey, StorageKeySerializerSettings? settings = null)
         {
             var parts = storageKey.Parts.Select(p =>
@@ -46,6 +48,7 @@ namespace Haondt.Identity.StorageKey
 
         public static Type ConvertStorageKeyPartType(string storageKeyPartType, StorageKeySerializerSettings? settings)
         {
+            settings ??= DefaultSerializerSettings;
             switch (settings?.TypeNameStrategy ?? TypeNameStrategy.AssemblyQualifiedName)
             {
                 case TypeNameStrategy.AssemblyQualifiedName:
@@ -63,6 +66,7 @@ namespace Haondt.Identity.StorageKey
 
         public static string ConvertStorageKeyPartType(Type storageKeyPartType, StorageKeySerializerSettings? settings)
         {
+            settings ??= DefaultSerializerSettings;
             return (settings?.TypeNameStrategy ?? TypeNameStrategy.AssemblyQualifiedName) switch
             {
                 TypeNameStrategy.AssemblyQualifiedName => storageKeyPartType.AssemblyQualifiedName

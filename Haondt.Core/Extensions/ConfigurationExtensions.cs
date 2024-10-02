@@ -17,6 +17,12 @@ namespace Haondt.Core.Extensions
                 configurationSection.Bind(section);
             return section;
         }
+
+        public static T GetRequiredSection<T>(this IConfiguration configuration)
+        {
+            return configuration.GetRequiredSection(typeof(T).Name).Get<T>() ?? throw new ArgumentNullException(typeof(T).Name);
+        }
+
     }
 }
 
