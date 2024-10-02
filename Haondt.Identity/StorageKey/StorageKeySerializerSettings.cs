@@ -11,6 +11,7 @@ namespace Haondt.Identity.StorageKey
     public class StorageKeySerializerSettings
     {
         public TypeNameStrategy TypeNameStrategy { get; set; } = TypeNameStrategy.AssemblyQualifiedName;
+        public KeyEncodingStrategy KeyEncodingStrategy { get; set; } = KeyEncodingStrategy.Base64;
         public Optional<BiDictionary<Type, string>> LookupTable { get; set; } = new();
     }
 }

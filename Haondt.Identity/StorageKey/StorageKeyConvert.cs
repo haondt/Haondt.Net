@@ -6,30 +6,74 @@ namespace Haondt.Identity.StorageKey
 {
     public static class StorageKeyConvert
     {
-        public static StorageKeySerializerSettings? DefaultSerializerSettings { get; set; }
+        public static StorageKeySerializerSettings DefaultSerializerSettings { get; set; } = new();
 
         public static string Serialize(StorageKey storageKey, StorageKeySerializerSettings? settings = null)
         {
+            settings ??= DefaultSerializerSettings;
             var parts = storageKey.Parts.Select(p =>
             {
                 var typeString = ConvertStorageKeyPartType(p.Type, settings);
-                var typeBytes = Encoding.UTF8.GetBytes(typeString);
-                var valueBytes = Encoding.UTF8.GetBytes(p.Value);
-                var entry = $"{Convert.ToBase64String(typeBytes)}:{Convert.ToBase64String(valueBytes)}";
+
+                string entry;
+                switch (settings.KeyEncodingStrategy)
+                {
+                    case KeyEncodingStrategy.Base64:
+                        var typeBytes = Encoding.UTF8.GetBytes(typeString);
+                        var valueBytes = Encoding.UTF8.GetBytes(p.Value);
+                        entry = $"{Convert.ToBase64String(typeBytes)}:{Convert.ToBase64String(valueBytes)}";
+                        break;
+                    case KeyEncodingStrategy.String:
+                        var escapedTypeString = typeString.Replace(":", "::");
+                        var escapedValueString = p.Value.Replace(":", "::");
+                        entry = $"{escapedTypeString}{{:}}{escapedValueString}".Replace("+", "++");
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown key encoding strategy {settings.KeyEncodingStrategy}");
+                }
                 return entry;
             });
-            return string.Join(',', parts);
+
+            var seperator = settings.KeyEncodingStrategy switch
+            {
+                KeyEncodingStrategy.Base64 => ",",
+                KeyEncodingStrategy.String => "{+}",
+                _ => throw new ArgumentException($"Unknown key encoding strategy {settings.KeyEncodingStrategy}")
+            };
+            return string.Join(seperator, parts);
         }
 
         private static List<StorageKeyPart> DeserializeToParts(string data, StorageKeySerializerSettings? settings)
         {
-            return data.Split(',').Select(p =>
+            settings ??= DefaultSerializerSettings;
+            var seperator = settings.KeyEncodingStrategy switch
             {
-                var sections = p.Split(':');
-                var valueBytes = Convert.FromBase64String(sections[1]);
-                var typeBytes = Convert.FromBase64String(sections[0]);
-                var typeString = Encoding.UTF8.GetString(typeBytes);
-                var valueString = Encoding.UTF8.GetString(valueBytes);
+                KeyEncodingStrategy.Base64 => ",",
+                KeyEncodingStrategy.String => "{+}",
+                _ => throw new ArgumentException($"Unknown key encoding strategy {settings.KeyEncodingStrategy}")
+            };
+
+            return data.Split(seperator).Select(p =>
+            {
+                string typeString;
+                string valueString;
+                switch (settings.KeyEncodingStrategy)
+                {
+                    case KeyEncodingStrategy.Base64:
+                        var sections = p.Split(':');
+                        var valueBytes = Convert.FromBase64String(sections[1]);
+                        var typeBytes = Convert.FromBase64String(sections[0]);
+                        typeString = Encoding.UTF8.GetString(typeBytes);
+                        valueString = Encoding.UTF8.GetString(valueBytes);
+                        break;
+                    case KeyEncodingStrategy.String:
+                        sections = p.Replace("++", "+").Split("{:}");
+                        typeString = sections[0].Replace("::", ":");
+                        valueString = sections[1].Replace("::", ":");
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown key encoding strategy {settings.KeyEncodingStrategy}");
+                }
                 return new StorageKeyPart(ConvertStorageKeyPartType(typeString, settings), valueString);
             }).ToList();
         }

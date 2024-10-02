@@ -13,6 +13,6 @@ namespace Haondt.Identity.StorageKey
         Name,
         FullName,
         LookupTable,
-        SimpleTypeConverter
+        SimpleTypeConverter,
     }
 }
