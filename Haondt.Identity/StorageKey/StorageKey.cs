@@ -46,6 +46,7 @@ namespace Haondt.Identity.StorageKey
         public static StorageKey Create(Type type, string value) => new([new(type, value)]);
         public static StorageKey Empty(Type type) => Create(type, "");
         public StorageKey Extend(Type type, string value) => new([.. Parts, new(type, value)]);
+        public StorageKey Extend(Type type) => new([.. Parts, new(type, "")]);
 
         /// <summary>
         /// Human readable representation of storage key
@@ -91,6 +92,7 @@ namespace Haondt.Identity.StorageKey
         public static StorageKey<T> Create(string value) => new([new(typeof(T), value)]);
         public static new StorageKey<T> Empty { get; } = Create("");
         public StorageKey<T2> Extend<T2>(string value) => new([.. Parts, new(typeof(T2), value)]);
+        public StorageKey<T2> Extend<T2>() => new([.. Parts, new(typeof(T2), "")]);
 
         public bool Equals(StorageKey<T>? other) => ((StorageKey)this).Equals(other);
     }
