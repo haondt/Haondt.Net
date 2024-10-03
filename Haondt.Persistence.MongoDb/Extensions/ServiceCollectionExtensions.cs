@@ -42,10 +42,12 @@ namespace Haondt.Persistence.MongoDb.Extensions
                 return new MongoClient(clientSettings);
             });
 
+
+            var settings = configuration.GetRequiredSection<MongoDbSettings>();
+            if (settings.RegisterIndiscriminateObjectSerializer)
+                BsonSerializer.RegisterSerializer(new ObjectSerializer(type => true));
             BsonSerializer.RegisterGenericSerializerDefinition(typeof(StorageKey<>), typeof(StorageKeyBsonConverter<>));
             BsonSerializer.RegisterSerializer(typeof(StorageKey), new StorageKeyBsonConverter());
-            BsonSerializer.RegisterSerializer(new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type)
-                || (type.FullName?.StartsWith("Haondt") ?? false)));
 
             return services;
         }
