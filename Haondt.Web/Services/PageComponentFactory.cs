@@ -7,9 +7,7 @@ namespace Haondt.Web.Services
     public class PageComponentFactory(
         IComponentFactory componentFactory,
         ILayoutComponentFactory layoutFactory,
-        IEnumerable<IHeadEntryDescriptor> headEntries
-
-        ) : IPageComponentFactory
+        IEnumerable<IHeadEntryDescriptor> headEntries) : IPageComponentFactory
     {
         public async Task<IComponent<PageModel>> GetComponent(string targetComponentName, List<(string Key, string Value)> queryParams)
         {
@@ -22,7 +20,7 @@ namespace Haondt.Web.Services
             {
                 Target = componentUri
             });
-            var layout = await layoutFactory.GetLayoutAsync(loader);
+            var layout = await layoutFactory.GetLayoutAsync(loader, targetComponentName);
             var pageComponent = await componentFactory.GetComponent(new PageModel
             {
                 Content = layout,
