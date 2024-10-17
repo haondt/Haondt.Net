@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Haondt.Core.Models
 {
@@ -16,6 +11,16 @@ namespace Haondt.Core.Models
         public Result(T value) { _value = value; _fail = false; _reason = default!; }
         public Result() { _value = default!; _fail = false; _reason = default!; }
         public Result(TReason reason) { _value = default!; _fail = true; _reason = reason; }
+
+        public static Result<T, TReason> Fail(TReason reason)
+        {
+            return new Result<T, TReason>(reason);
+        }
+
+        public static Result<T, TReason> Succeed(T value)
+        {
+            return new Result<T, TReason>(value);
+        }
 
         [MemberNotNullWhen(false, nameof(Reason))]
         public bool IsSuccessful => !_fail;
@@ -62,6 +67,16 @@ namespace Haondt.Core.Models
         public readonly bool IsSuccessful => !_fail;
         public Result(TReason reason) { _reason = reason; _fail = true; }
         public Result() { _reason = default!; _fail = false; }
+
+        public static Result<TReason> Fail(TReason reason)
+        {
+            return new Result<TReason>(reason);
+        }
+
+        public static Result<TReason> Succeed()
+        {
+            return new Result<TReason>();
+        }
 
         public readonly TReason? Reason
         {
