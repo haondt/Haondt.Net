@@ -1,15 +1,12 @@
 ﻿using Haondt.Web.Components;
 using Haondt.Web.Core.Components;
-using Microsoft.Extensions.Options;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Web;
 
 namespace Haondt.Web.Services
 {
     public class PageComponentFactory(
         IComponentFactory componentFactory,
-        ILayoutUpdateFactory layoutFactory,
+        ILayoutComponentFactory layoutFactory,
         IEnumerable<IHeadEntryDescriptor> headEntries
 
         ) : IPageComponentFactory
@@ -22,10 +19,10 @@ namespace Haondt.Web.Services
                 componentUri = $"{componentUri}?{string.Join('&', queryStrings)}";
 
             var loader = await componentFactory.GetPlainComponent(new LoaderModel
-            { 
+            {
                 Target = componentUri
             });
-            var layout = await layoutFactory.GetInitialLayout(loader).BuildAsync();
+            var layout = await layoutFactory.GetLayoutAsync(loader);
             var pageComponent = await componentFactory.GetComponent(new PageModel
             {
                 Content = layout,
