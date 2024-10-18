@@ -12,10 +12,10 @@ namespace Haondt.Persistence.Postgresql.Services
     public class PostgresqlStorage : IStorage
     {
         private readonly PostgresqlStorageSettings _settings;
-        private readonly JsonSerializerSettings _serializerSettings;
-        private readonly string _connectionString;
-        private readonly string _primaryTableName;
-        private readonly string _foreignKeyTableName;
+        protected readonly JsonSerializerSettings _serializerSettings;
+        protected readonly string _connectionString;
+        protected readonly string _primaryTableName;
+        protected readonly string _foreignKeyTableName;
 
         public PostgresqlStorage(IOptions<PostgresqlStorageSettings> options)
         {
@@ -34,7 +34,7 @@ namespace Haondt.Persistence.Postgresql.Services
             _foreignKeyTableName = SanitizeTableName(_settings.ForeignKeyTableName);
         }
 
-        private JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
+        protected virtual JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
         {
             settings.TypeNameHandling = TypeNameHandling.Auto;
             settings.MissingMemberHandling = MissingMemberHandling.Error;
@@ -44,32 +44,32 @@ namespace Haondt.Persistence.Postgresql.Services
             return settings;
         }
 
-        private string SanitizeTableName(string tableName)
+        protected string SanitizeTableName(string tableName)
         {
             var sanitized = tableName.Replace("\"", "\"\"");
             return $"\"{sanitized}\"";
         }
 
-        private async Task<NpgsqlConnection> GetConnectionAsync()
+        protected virtual async Task<NpgsqlConnection> GetConnectionAsync()
         {
             var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
             return connection;
         }
 
-        private async Task WithConnectionAsync(Func<NpgsqlConnection, Task> action)
+        protected async Task WithConnectionAsync(Func<NpgsqlConnection, Task> action)
         {
             await using var connection = await GetConnectionAsync();
             await action(connection);
         }
 
-        private async Task<T> WithConnectionAsync<T>(Func<NpgsqlConnection, Task<T>> action)
+        protected async Task<T> WithConnectionAsync<T>(Func<NpgsqlConnection, Task<T>> action)
         {
             await using var connection = await GetConnectionAsync();
             return await action(connection);
         }
 
-        private async Task WithTransactionAsync(Func<NpgsqlConnection, NpgsqlTransaction, Task> action)
+        protected async Task WithTransactionAsync(Func<NpgsqlConnection, NpgsqlTransaction, Task> action)
         {
             await using var connection = await GetConnectionAsync();
             await using var transaction = await connection.BeginTransactionAsync();
@@ -85,7 +85,7 @@ namespace Haondt.Persistence.Postgresql.Services
             }
         }
 
-        private async Task<T> WithTransactionAsync<T>(Func<NpgsqlConnection, NpgsqlTransaction, Task<T>> action)
+        protected async Task<T> WithTransactionAsync<T>(Func<NpgsqlConnection, NpgsqlTransaction, Task<T>> action)
         {
             await using var connection = await GetConnectionAsync();
             await using var transaction = await connection.BeginTransactionAsync();
@@ -150,7 +150,7 @@ namespace Haondt.Persistence.Postgresql.Services
             return InternalSetManyAsync(values.Select(v => (v.Key, v.Value, new List<StorageKey>())));
         }
 
-        private async Task InternalSetManyAsync(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
+        protected async Task InternalSetManyAsync(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
         {
             await WithTransactionAsync(async (connection, transaction) =>
             {
