@@ -1,0 +1,30 @@
+name: haondt-test
+
+services:
+  haondt-mongo:
+    container_name: haondt-mongo
+    image: mongo:5.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: haondt
+      MONGO_INITDB_ROOT_PASSWORD: haondt
+      MONGO_INITDB_DATABASE: haondt
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    ports:
+      - 37017:27017
+
+  haondt-postgres:
+    container_name: haondt-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: haondt
+      POSTGRES_PASSWORD: haondt
+      PGDATA: /data/pgdata
+    ports:
+      - 3432:5432
+    volumes:
+      - haondt-test-postgres-data:/data
+      - ./postgresql-init.sql.txt:/docker-entrypoint-initdb.d/postgresql-init.sql
+
+volumes:
+  haondt-test-postgres-data:

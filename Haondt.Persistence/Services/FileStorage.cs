@@ -1,4 +1,5 @@
-﻿using Haondt.Core.Models;
+﻿using Haondt.Core.Converters;
+using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -8,7 +9,13 @@ namespace Haondt.Persistence.Services
 {
     public class DataObject
     {
-        public Dictionary<string, object?> Values { get; set; } = [];
+        public Dictionary<string, DataLeaf> Values { get; set; } = [];
+    }
+
+    public class DataLeaf
+    {
+        public object? Value { get; set; }
+        public HashSet<string> ForeignKeys { get; set; } = [];
     }
 
     public class FileStorage : IStorage
@@ -118,12 +125,123 @@ namespace Haondt.Persistence.Services
                 return new Result<T, StorageResultReason>(castedValue);
             });
 
-        public Task Set<T>(StorageKey<T> key, T value) =>
+        public Task Set<T>(StorageKey<T> key, T value) => SetMany<T>([(key, value)]);
+
+        public Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
-                data.Values[StorageKeyConvert.Serialize(key)] = value;
+                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf) ? new Result<object?, StorageResultReason>(leaf.Value) : new(StorageResultReason.NotFound)).ToList();
+            });
+
+        public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf) ? new Result<T, StorageResultReason>(TypeCoercer.Coerce<T>(leaf.Value)) : new(StorageResultReason.NotFound)).ToList();
+            });
+
+
+        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
+                return data.Values
+                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
+                    .Select(kvp => (StorageKeyConvert.Deserialize<T>(kvp.Key), TypeCoercer.Coerce<T>(kvp.Value.Value)))
+                    .ToList();
+            });
+
+        public Task Set<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                var primaryKeyString = StorageKeyConvert.Serialize(primaryKey);
+                var foreignKeyStringSet = addForeignKeys
+                    .Select(fk => StorageKeyConvert.Serialize(fk))
+                    .ToHashSet();
+                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                {
+                    leaf.Value = value;
+                    leaf.ForeignKeys.UnionWith(foreignKeyStringSet);
+                    data.Values[primaryKeyString] = leaf;
+                }
+                else
+                {
+                    data.Values[primaryKeyString] = new DataLeaf
+                    {
+                        Value = value,
+                        ForeignKeys = foreignKeyStringSet
+                    };
+                }
+
                 await SetDataAsync(data);
+            });
+
+        public Task SetMany(List<(StorageKey Key, object? Value)> values) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                foreach (var value in values)
+                {
+                    var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
+                    if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                    {
+                        leaf.Value = value;
+                        data.Values[primaryKeyString] = leaf;
+                        continue;
+                    }
+
+                    data.Values[primaryKeyString] = new DataLeaf
+                    {
+                        Value = value
+                    };
+                }
+                await SetDataAsync(data);
+            });
+
+        public Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                foreach (var value in values)
+                {
+                    var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
+                    if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                    {
+                        leaf.Value = value;
+                        data.Values[primaryKeyString] = leaf;
+                        continue;
+                    }
+
+                    data.Values[primaryKeyString] = new DataLeaf
+                    {
+                        Value = value
+                    };
+                }
+                await SetDataAsync(data);
+            });
+
+        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
+                var primaryKeysToDelete = data.Values
+                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                var deleted = 0;
+                foreach (var primaryKey in primaryKeysToDelete)
+                    if (data.Values.Remove(primaryKey))
+                        deleted++;
+
+                if (deleted == 0)
+                    return new(StorageResultReason.NotFound);
+                await SetDataAsync(data);
+                return new Result<int, StorageResultReason>(deleted);
             });
     }
 }

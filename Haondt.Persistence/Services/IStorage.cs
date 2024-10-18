@@ -5,9 +5,19 @@ namespace Haondt.Persistence.Services
 {
     public interface IStorage
     {
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key);
-        public Task<bool> ContainsKey(StorageKey key);
-        public Task Set<T>(StorageKey<T> key, T value);
-        public Task<Result<StorageResultReason>> Delete(StorageKey key);
+        Task<bool> ContainsKey(StorageKey primaryKey);
+
+        Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> primaryKey);
+        Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys);
+        Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys);
+        Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey);
+
+        Task Set<T>(StorageKey<T> primaryKey, T value);
+        Task Set<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys);
+        Task SetMany(List<(StorageKey Key, object? Value)> values);
+        Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values);
+
+        Task<Result<StorageResultReason>> Delete(StorageKey primaryKey);
+        Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey);
     }
 }

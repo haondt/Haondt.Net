@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Haondt.Identity\Haondt.Identity.csproj" />
+    <ProjectReference Include="..\Haondt.Persistence\Haondt.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
