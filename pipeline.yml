@@ -11,5 +11,7 @@ tasks:
       - csproj: ./Haondt.Web.Components/Haondt.Web.Components.csproj
       - csproj: ./Haondt.Web.Core/Haondt.Web.Core.csproj
       - csproj: ./Haondt.Persistence.MongoDb/Haondt.Persistence.MongoDb.csproj
+      - csproj: ./Haondt.Persistence.Postgresql/Haondt.Persistence.Postgresql.csproj
+      - csproj: ./Haondt.Persistence.Sqlite/Haondt.Persistence.Sqlite.csproj
     registries:
       - gitlab
