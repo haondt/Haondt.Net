@@ -11,11 +11,11 @@ namespace Haondt.Persistence.Sqlite.Services
 {
     public class SqliteStorage : IStorage
     {
-        private readonly SqliteStorageSettings _settings;
-        private readonly JsonSerializerSettings _serializerSettings;
-        private readonly string _connectionString;
-        private readonly string _primaryTableName;
-        private readonly string _foreignKeyTableName;
+        protected readonly SqliteStorageSettings _settings;
+        protected readonly JsonSerializerSettings _serializerSettings;
+        protected readonly string _connectionString;
+        protected readonly string _primaryTableName;
+        protected readonly string _foreignKeyTableName;
 
         public SqliteStorage(IOptions<SqliteStorageSettings> options)
         {
@@ -33,7 +33,7 @@ namespace Haondt.Persistence.Sqlite.Services
             InitializeDb();
         }
 
-        private JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
+        protected virtual JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
         {
             settings.TypeNameHandling = TypeNameHandling.Auto;
             settings.MissingMemberHandling = MissingMemberHandling.Error;
@@ -43,7 +43,7 @@ namespace Haondt.Persistence.Sqlite.Services
             return settings;
         }
 
-        private string SanitizeTableName(string tableName)
+        protected string SanitizeTableName(string tableName)
         {
             // Escape any double quotes by replacing them with two double quotes
             var sanitized = tableName.Replace("\"", "\"\"");
@@ -52,7 +52,7 @@ namespace Haondt.Persistence.Sqlite.Services
             return $"\"{sanitized}\"";
         }
 
-        private SqliteConnection GetConnection()
+        protected virtual SqliteConnection GetConnection()
         {
             var connection = new SqliteConnection(_connectionString);
             connection.Open();
@@ -67,19 +67,19 @@ namespace Haondt.Persistence.Sqlite.Services
             return connection;
         }
 
-        private void WithConnection(Action<SqliteConnection> action)
+        protected void WithConnection(Action<SqliteConnection> action)
         {
             using var connection = GetConnection();
             action(connection);
         }
 
-        private T WithConnection<T>(Func<SqliteConnection, T> action)
+        protected T WithConnection<T>(Func<SqliteConnection, T> action)
         {
             using var connection = GetConnection();
             return action(connection);
         }
 
-        private void WithTransaction(Action<SqliteConnection, SqliteTransaction> action)
+        protected void WithTransaction(Action<SqliteConnection, SqliteTransaction> action)
         {
             using var connection = GetConnection();
             using var transaction = connection.BeginTransaction();
@@ -94,7 +94,7 @@ namespace Haondt.Persistence.Sqlite.Services
                 throw;
             }
         }
-        private T WithTransaction<T>(Func<SqliteConnection, T> action)
+        protected T WithTransaction<T>(Func<SqliteConnection, T> action)
         {
             using var connection = GetConnection();
             using var transaction = connection.BeginTransaction();
@@ -111,7 +111,7 @@ namespace Haondt.Persistence.Sqlite.Services
             }
         }
 
-        private void InitializeDb()
+        protected virtual void InitializeDb()
         {
 
             if (WithConnection(connection =>
@@ -208,7 +208,7 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.CompletedTask;
         }
 
-        private void InternalSetMany(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
+        protected void InternalSetMany(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
         {
             WithTransaction((connection, transaction) =>
             {

@@ -10,8 +10,8 @@ namespace Haondt.Persistence.MongoDb.Services
 {
     public class MongoDbStorage : IStorage
     {
-        private readonly IMongoCollection<HaondtMongoDbDocument> _collection;
-        private readonly IMongoQueryable<HaondtMongoDbDocument> _queryableCollection;
+        protected readonly IMongoCollection<HaondtMongoDbDocument> _collection;
+        protected readonly IMongoQueryable<HaondtMongoDbDocument> _queryableCollection;
 
         public MongoDbStorage(
             string database,
