@@ -19,6 +19,11 @@ namespace Haondt.Persistence.Tests
         public required int Diameter { get; set; }
     }
 
+    public class NullContainer
+    {
+        public Car? Value { get; set; }
+    }
+
     public abstract class AbstractStorageTests(IStorage storage)
     {
         [Fact]
@@ -30,6 +35,53 @@ namespace Haondt.Persistence.Tests
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
             existing.Value.Color.Should().Be("red");
+        }
+
+        [Fact]
+        public async Task WillSetAndGetNullContents()
+        {
+            var id = Guid.NewGuid().ToString();
+            var key = StorageKey<NullContainer>.Create(id);
+            await storage.Set(key, new NullContainer { Value = null });
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Value.Should().BeNull();
+
+            await storage.Set(key, new NullContainer { Value = new Car { Color = "red" } });
+            existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Value.Should().NotBeNull();
+            existing.Value.Value!.Color.Should().Be("red");
+        }
+
+        [Fact]
+        public async Task WillSetAndGetPrimitiveInt()
+        {
+            var key = StorageKey<int>.Create("foo");
+            await storage.Set(key, 4);
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Should().Be(4);
+        }
+
+        [Fact]
+        public async Task WillSetAndGetPrimitiveString()
+        {
+            var key = StorageKey<string>.Create("foo");
+            await storage.Set(key, "red");
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Should().Be("red");
+        }
+
+        [Fact]
+        public async Task WillSetAndGetPrimitiveBool()
+        {
+            var key = StorageKey<bool>.Create("foo");
+            await storage.Set(key, true);
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Should().Be(true);
         }
 
         [Fact]
@@ -124,7 +176,7 @@ namespace Haondt.Persistence.Tests
             var ids = Enumerable.Range(0, 10)
                 .Select(_ => Guid.NewGuid().ToString());
             var keys = ids.Select(StorageKey<Car>.Create);
-            var pairs = keys.Select((key, i) => ((StorageKey)key, (object?)new Car { Color = $"color_{i}" })).ToList();
+            var pairs = keys.Select((key, i) => ((StorageKey)key, (object)new Car { Color = $"color_{i}" })).ToList();
             await storage.SetMany(pairs);
 
             for (int i = 0; i < pairs.Count; i++)
@@ -188,7 +240,7 @@ namespace Haondt.Persistence.Tests
         public async Task WillGetAndSetForeignKeys()
         {
             var carKey = StorageKey<Car>.Create(Guid.NewGuid().ToString());
-            StorageKey<Car>? carKey2 = StorageKey<Car>.Create(Guid.NewGuid().ToString());
+            StorageKey<Car> carKey2 = StorageKey<Car>.Create(Guid.NewGuid().ToString());
             var tireKey = carKey.Extend<Tire>("FL");
             var manufacturerKey = StorageKey<Manufacturer>.Create(Guid.NewGuid().ToString());
 

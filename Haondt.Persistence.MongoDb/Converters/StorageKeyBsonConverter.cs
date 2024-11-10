@@ -1,5 +1,4 @@
 ﻿using Haondt.Identity.StorageKey;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 
@@ -14,7 +13,7 @@ namespace Haondt.Persistence.MongoDb.Converters
             => StorageKeyConvert.Deserialize(context.Reader.ReadString());
     }
 
-    public class StorageKeyBsonConverter<T> : SerializerBase<StorageKey<T>>
+    public class StorageKeyBsonConverter<T> : SerializerBase<StorageKey<T>> where T : notnull
     {
         public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, StorageKey<T> value)
             => context.Writer.WriteString(StorageKeyConvert.Serialize(value));

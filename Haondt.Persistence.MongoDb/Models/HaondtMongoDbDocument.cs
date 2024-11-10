@@ -8,6 +8,6 @@ namespace Haondt.Persistence.MongoDb.Models
     {
         public required StorageKey PrimaryKey { get; set; }
         public List<StorageKey> ForeignKeys { get; set; } = [];
-        public required object? Value { get; set; }
+        public required object Value { get; set; }
     }
 }

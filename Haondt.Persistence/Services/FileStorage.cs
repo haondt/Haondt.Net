@@ -1,9 +1,9 @@
-﻿using Haondt.Core.Converters;
-using Haondt.Core.Models;
+﻿using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
+using Haondt.Persistence.Converters;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Haondt.Persistence.Services
 {
@@ -14,29 +14,42 @@ namespace Haondt.Persistence.Services
 
     public class DataLeaf
     {
-        public object? Value { get; set; }
+        public required JObject ValueContainer { get; set; }
         public HashSet<string> ForeignKeys { get; set; } = [];
+    }
+
+    public class ValueContainer<T> where T : notnull
+    {
+        public required T Value { get; set; }
+    }
+    public class ValueContainer
+    {
+        public required object Value { get; set; }
     }
 
     public class FileStorage : IStorage
     {
         protected readonly string _dataFile;
-        protected readonly JsonSerializerOptions _serializerSettings;
+        protected readonly JsonSerializerSettings _serializerSettings;
+        private readonly JsonSerializer _jObjectSerializer;
         protected DataObject? _dataCache;
         protected readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
         public FileStorage(IOptions<HaondtFileStorageSettings> options)
         {
             _dataFile = options.Value.DataFile;
-            _serializerSettings = new JsonSerializerOptions();
+            _serializerSettings = new JsonSerializerSettings();
             ConfigureSerializerSettings(_serializerSettings);
+            _jObjectSerializer = JsonSerializer.Create(_serializerSettings);
         }
 
-        protected virtual JsonSerializerOptions ConfigureSerializerSettings(JsonSerializerOptions settings)
+        protected virtual JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
         {
-            settings.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
-            settings.WriteIndented = true;
-            settings.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+            settings.TypeNameHandling = TypeNameHandling.None;
+            settings.MissingMemberHandling = MissingMemberHandling.Error;
+            settings.Formatting = Formatting.Indented;
+            settings.NullValueHandling = NullValueHandling.Ignore;
+            settings.Converters.Add(new GenericStorageKeyJsonConverter());
             return settings;
         }
 
@@ -77,7 +90,7 @@ namespace Haondt.Persistence.Services
 
             var text = await reader.ReadToEndAsync();
 
-            _dataCache = JsonSerializer.Deserialize<DataObject>(text, _serializerSettings) ?? new DataObject();
+            _dataCache = JsonConvert.DeserializeObject<DataObject>(text, _serializerSettings) ?? new DataObject();
             return _dataCache;
         }
 
@@ -91,7 +104,7 @@ namespace Haondt.Persistence.Services
                 Options = FileOptions.Asynchronous | FileOptions.SequentialScan
             });
 
-            var text = JsonSerializer.Serialize(data, _serializerSettings);
+            var text = JsonConvert.SerializeObject(data, _serializerSettings);
             await writer.WriteAsync(text);
             _dataCache = data;
         }
@@ -113,47 +126,69 @@ namespace Haondt.Persistence.Services
                 return new Result<StorageResultReason>();
             });
 
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) =>
+        protected T ExtractContainerValue<T>(StorageKey<T> key, DataLeaf leaf) where T : notnull
+        {
+            return ExtractContainerValue<T>(key.ToString(), leaf);
+        }
+        protected T ExtractContainerValue<T>(string key, DataLeaf leaf) where T : notnull
+        {
+            var container = leaf.ValueContainer.ToObject<ValueContainer<T>>()
+                ?? throw new InvalidCastException($"Cannot convert {key} to type {typeof(T)}");
+            return container.Value;
+        }
+        protected object ExtractContainerValue(StorageKey key, DataLeaf leaf)
+        {
+            var genericType = typeof(ValueContainer<>).MakeGenericType(key.Type);
+            var container = leaf.ValueContainer.ToObject(genericType)
+                ?? throw new InvalidCastException($"Cannot convert {key} to type {key.Type}");
+            var genericParameter = genericType.GetProperty(nameof(ValueContainer<object>.Value))!;
+            return genericParameter.GetValue(container)!;
+        }
+
+        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 var stringKey = StorageKeyConvert.Serialize(key);
                 if (!data.Values.TryGetValue(stringKey, out var value))
                     return new(StorageResultReason.NotFound);
-                if (value is not T castedValue)
-                    throw new InvalidCastException($"Cannot convert {key} to type {typeof(T)}");
-                return new Result<T, StorageResultReason>(castedValue);
+                return new Result<T, StorageResultReason>(ExtractContainerValue<T>(key, value));
             });
 
-        public Task Set<T>(StorageKey<T> key, T value) => SetMany<T>([(key, value)]);
+        public Task Set<T>(StorageKey<T> key, T value) where T : notnull => SetMany<T>([(key, value)]);
 
-        public Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
+        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
-                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf) ? new Result<object?, StorageResultReason>(leaf.Value) : new(StorageResultReason.NotFound)).ToList();
+                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf)
+                ? new Result<object, StorageResultReason>(ExtractContainerValue(k, leaf))
+                : new(StorageResultReason.NotFound)).ToList();
             });
 
-        public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) =>
+        public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
-                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf) ? new Result<T, StorageResultReason>(TypeCoercer.Coerce<T>(leaf.Value)) : new(StorageResultReason.NotFound)).ToList();
+                return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf)
+                ? new Result<T, StorageResultReason>(ExtractContainerValue<T>(k, leaf))
+                : new(StorageResultReason.NotFound)).ToList();
             });
 
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) =>
+        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
                 return data.Values
                     .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
-                    .Select(kvp => (StorageKeyConvert.Deserialize<T>(kvp.Key), TypeCoercer.Coerce<T>(kvp.Value.Value)))
+                    .Select(kvp => (StorageKeyConvert.Deserialize<T>(kvp.Key),
+                        ExtractContainerValue<T>(kvp.Key, kvp.Value)))
                     .ToList();
             });
 
-        public Task Set<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) =>
+        public Task Set<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
@@ -163,7 +198,7 @@ namespace Haondt.Persistence.Services
                     .ToHashSet();
                 if (data.Values.TryGetValue(primaryKeyString, out var leaf))
                 {
-                    leaf.Value = value;
+                    leaf.ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = value }, _jObjectSerializer);
                     leaf.ForeignKeys.UnionWith(foreignKeyStringSet);
                     data.Values[primaryKeyString] = leaf;
                 }
@@ -171,7 +206,7 @@ namespace Haondt.Persistence.Services
                 {
                     data.Values[primaryKeyString] = new DataLeaf
                     {
-                        Value = value,
+                        ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = value }, _jObjectSerializer),
                         ForeignKeys = foreignKeyStringSet
                     };
                 }
@@ -179,7 +214,7 @@ namespace Haondt.Persistence.Services
                 await SetDataAsync(data);
             });
 
-        public Task SetMany(List<(StorageKey Key, object? Value)> values) =>
+        public Task SetMany(List<(StorageKey Key, object Value)> values) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
@@ -188,20 +223,20 @@ namespace Haondt.Persistence.Services
                     var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
                     if (data.Values.TryGetValue(primaryKeyString, out var leaf))
                     {
-                        leaf.Value = value;
+                        leaf.ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer);
                         data.Values[primaryKeyString] = leaf;
                         continue;
                     }
 
                     data.Values[primaryKeyString] = new DataLeaf
                     {
-                        Value = value
+                        ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer),
                     };
                 }
                 await SetDataAsync(data);
             });
 
-        public Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values) =>
+        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
@@ -210,20 +245,20 @@ namespace Haondt.Persistence.Services
                     var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
                     if (data.Values.TryGetValue(primaryKeyString, out var leaf))
                     {
-                        leaf.Value = value;
+                        leaf.ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer);
                         data.Values[primaryKeyString] = leaf;
                         continue;
                     }
 
                     data.Values[primaryKeyString] = new DataLeaf
                     {
-                        Value = value
+                        ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer),
                     };
                 }
                 await SetDataAsync(data);
             });
 
-        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) =>
+        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();

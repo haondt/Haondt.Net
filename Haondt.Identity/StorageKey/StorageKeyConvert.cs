@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 
 namespace Haondt.Identity.StorageKey
 {
@@ -84,7 +82,7 @@ namespace Haondt.Identity.StorageKey
             return StorageKey.Create(parts);
         }
 
-        public static StorageKey<T> Deserialize<T>(string data, StorageKeySerializerSettings? settings = null)
+        public static StorageKey<T> Deserialize<T>(string data, StorageKeySerializerSettings? settings = null) where T : notnull
         {
             var parts = DeserializeToParts(data, settings);
             return StorageKey<T>.Create(parts);

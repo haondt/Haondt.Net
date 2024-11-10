@@ -6,7 +6,7 @@ namespace Haondt.Persistence.Services
 {
     public class MemoryEntry
     {
-        public required object? Value { get; set; }
+        public required object Value { get; set; }
         public HashSet<StorageKey> ForeignKeys { get; set; } = [];
     }
 
@@ -23,7 +23,7 @@ namespace Haondt.Persistence.Services
             return Task.FromResult(new Result<StorageResultReason>(StorageResultReason.NotFound));
         }
 
-        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey)
+        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keysToRemove = _storage.Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
                 .Select(kvp => kvp.Key);
@@ -38,48 +38,45 @@ namespace Haondt.Persistence.Services
         }
 
 
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key)
+        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
         {
             if (_storage.TryGetValue(key, out var value))
-                return Task.FromResult(new Result<T, StorageResultReason>(TypeCoercer.Coerce<T>(value.Value)));
+                return Task.FromResult(new Result<T, StorageResultReason>(TypeConverter.Coerce<T>(value.Value)));
             return Task.FromResult(new Result<T, StorageResultReason>(StorageResultReason.NotFound));
         }
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey)
+        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             return Task.FromResult(_storage
                 .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
-                .Select(kvp => (kvp.Key.As<T>(), TypeCoercer.Coerce<T>(kvp.Value.Value)))
+                .Select(kvp => (kvp.Key.As<T>(), TypeConverter.Coerce<T>(kvp.Value.Value)))
                 .ToList());
         }
 
 
-        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys)
+        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());
             return results.Select(r =>
             {
                 if (r.IsSuccessful)
-                    return new(TypeCoercer.Coerce<T>(r.Value));
+                    return new(TypeConverter.Coerce<T>(r.Value));
                 return new Result<T, StorageResultReason>(r.Reason);
             }).ToList();
         }
 
-        public Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> keys)
+        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             return Task.FromResult(keys.Select(k =>
             {
                 if (_storage.TryGetValue(k, out var value))
                     return new(value.Value);
-                return new Result<object?, StorageResultReason>(StorageResultReason.NotFound);
+                return new Result<object, StorageResultReason>(StorageResultReason.NotFound);
             }).ToList());
         }
 
-        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys)
+        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
             var foreignKeySet = foreignKeys.Cast<StorageKey>().ToHashSet();
 
             if (_storage.TryGetValue(key, out var existing))
@@ -93,16 +90,16 @@ namespace Haondt.Persistence.Services
             return Task.CompletedTask;
         }
 
-        public Task Set<T>(StorageKey<T> key, T value) => Set(key, value, []);
+        public Task Set<T>(StorageKey<T> key, T value) where T : notnull => Set(key, value, []);
 
-        public Task SetMany(List<(StorageKey Key, object? Value)> values)
+        public Task SetMany(List<(StorageKey Key, object Value)> values)
         {
             foreach (var (key, value) in values)
                 _storage[key] = new MemoryEntry { Value = value };
             return Task.CompletedTask;
         }
 
-        public Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values)
-            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object?)kvp.Value)).ToList());
+        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
+            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object)kvp.Value)).ToList());
     }
 }

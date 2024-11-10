@@ -147,7 +147,7 @@ namespace Haondt.Persistence.Sqlite.Services
             });
         }
 
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key)
+        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(key);
             var result = WithConnection(connection =>
@@ -182,7 +182,7 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(longCount > 0);
         }
 
-        public Task Set<T>(StorageKey<T> key, T value)
+        public Task Set<T>(StorageKey<T> key, T value) where T : notnull
         {
             return Set(key, value, []);
         }
@@ -202,13 +202,13 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(new Result<StorageResultReason>());
         }
 
-        public Task SetMany(List<(StorageKey Key, object? Value)> values)
+        public Task SetMany(List<(StorageKey Key, object Value)> values)
         {
             InternalSetMany(values.Select(v => (v.Key, v.Value, new List<StorageKey>())));
             return Task.CompletedTask;
         }
 
-        protected void InternalSetMany(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
+        protected void InternalSetMany(IEnumerable<(StorageKey Key, object Value, List<StorageKey> ForeignKeys)> values)
         {
             WithTransaction((connection, transaction) =>
             {
@@ -281,7 +281,7 @@ namespace Haondt.Persistence.Sqlite.Services
 
         }
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey)
+        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(foreignKey);
             var results = WithConnection(connection =>
@@ -316,13 +316,13 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(results);
         }
 
-        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys)
+        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull
         {
             InternalSetMany([(key, value!, foreignKeys.Cast<StorageKey>().ToList())]);
             return Task.CompletedTask;
         }
 
-        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey)
+        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(foreignKey);
 
@@ -348,18 +348,18 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(new Result<int, StorageResultReason>(rowsAffected));
         }
 
-        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys)
+        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());
             return results.Select(r =>
             {
                 if (r.IsSuccessful)
-                    return new(TypeCoercer.Coerce<T>(r.Value));
+                    return new(TypeConverter.Coerce<T>(r.Value));
                 return new Result<T, StorageResultReason>(r.Reason);
             }).ToList();
         }
 
-        public Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> keys)
+        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             var results = WithConnection(connection =>
             {
@@ -373,7 +373,7 @@ namespace Haondt.Persistence.Sqlite.Services
                 parameter.ParameterName = "@key";
                 command.Parameters.Add(parameter);
 
-                var results = new List<Result<object?, StorageResultReason>>();
+                var results = new List<Result<object, StorageResultReason>>();
                 foreach (var key in keys)
                 {
                     var keyString = StorageKeyConvert.Serialize(key);
@@ -396,8 +396,8 @@ namespace Haondt.Persistence.Sqlite.Services
 
             return Task.FromResult(results);
         }
-        public Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values)
-            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object?)kvp.Value)).ToList());
+        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
+            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object)kvp.Value)).ToList());
     }
 }
 

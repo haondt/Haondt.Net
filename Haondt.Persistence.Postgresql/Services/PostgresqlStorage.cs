@@ -36,7 +36,7 @@ namespace Haondt.Persistence.Postgresql.Services
 
         protected virtual JsonSerializerSettings ConfigureSerializerSettings(JsonSerializerSettings settings)
         {
-            settings.TypeNameHandling = TypeNameHandling.Auto;
+            settings.TypeNameHandling = TypeNameHandling.None;
             settings.MissingMemberHandling = MissingMemberHandling.Error;
             settings.Formatting = Formatting.None;
             settings.NullValueHandling = NullValueHandling.Ignore;
@@ -102,7 +102,7 @@ namespace Haondt.Persistence.Postgresql.Services
             }
         }
 
-        public async Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key)
+        public async Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(key);
             var result = await WithConnectionAsync(async connection =>
@@ -136,21 +136,21 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public Task Set<T>(StorageKey<T> key, T value)
+        public Task Set<T>(StorageKey<T> key, T value) where T : notnull
         {
             return Set(key, value, []);
         }
 
-        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys)
+        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull
         {
             return InternalSetManyAsync([(key, value!, foreignKeys.Cast<StorageKey>().ToList())]);
         }
-        public Task SetMany(List<(StorageKey Key, object? Value)> values)
+        public Task SetMany(List<(StorageKey Key, object Value)> values)
         {
             return InternalSetManyAsync(values.Select(v => (v.Key, v.Value, new List<StorageKey>())));
         }
 
-        protected async Task InternalSetManyAsync(IEnumerable<(StorageKey Key, object? Value, List<StorageKey> ForeignKeys)> values)
+        protected async Task InternalSetManyAsync(IEnumerable<(StorageKey Key, object Value, List<StorageKey> ForeignKeys)> values)
         {
             await WithTransactionAsync(async (connection, transaction) =>
             {
@@ -210,7 +210,7 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public async Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey)
+        public async Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(foreignKey);
             return await WithConnectionAsync(async connection =>
@@ -244,7 +244,7 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public async Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey)
+        public async Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(foreignKey);
 
@@ -268,18 +268,18 @@ namespace Haondt.Persistence.Postgresql.Services
             return new Result<int, StorageResultReason>(rowsAffected);
         }
 
-        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys)
+        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());
             return results.Select(r =>
             {
                 if (r.IsSuccessful)
-                    return new Result<T, StorageResultReason>(TypeCoercer.Coerce<T>(r.Value));
+                    return new Result<T, StorageResultReason>(TypeConverter.Coerce<T>(r.Value));
                 return new Result<T, StorageResultReason>(r.Reason);
             }).ToList();
         }
 
-        public async Task<List<Result<object?, StorageResultReason>>> GetMany(List<StorageKey> keys)
+        public async Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             return await WithConnectionAsync(async connection =>
             {
@@ -300,11 +300,11 @@ namespace Haondt.Persistence.Postgresql.Services
                 {
                     var keyString = StorageKeyConvert.Serialize(key);
                     if (!keyResults.TryGetValue(keyString, out var valueJson))
-                        return new Result<object?, StorageResultReason>(StorageResultReason.NotFound);
+                        return new Result<object, StorageResultReason>(StorageResultReason.NotFound);
 
                     var value = JsonConvert.DeserializeObject(valueJson, key.Type, _serializerSettings)
                         ?? throw new JsonException("Unable to deserialize result");
-                    return new Result<object?, StorageResultReason>(value);
+                    return new Result<object, StorageResultReason>(value);
                 }).ToList();
             });
         }
@@ -325,7 +325,7 @@ namespace Haondt.Persistence.Postgresql.Services
             return new Result<StorageResultReason>();
         }
 
-        public Task SetMany<T>(List<(StorageKey<T> Key, T? Value)> values)
-            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object?)kvp.Value)).ToList());
+        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
+            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object)kvp.Value)).ToList());
     }
 }
