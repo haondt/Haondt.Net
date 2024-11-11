@@ -30,16 +30,16 @@ namespace Haondt.Persistence.MongoDb.Services
                 .AnyAsync();
         }
 
-        public async Task<Result<StorageResultReason>> Delete(StorageKey key)
+        public async Task<bool> Delete(StorageKey key)
         {
             var result = await _collection.DeleteOneAsync(q => q.PrimaryKey == key);
-            return result.DeletedCount == 0 ? new(StorageResultReason.NotFound) : new();
+            return result.DeletedCount > 0;
         }
 
-        public async Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
+        public async Task<int> DeleteByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var result = await _collection.DeleteManyAsync(q => q.ForeignKeys.Any(fk => fk == foreignKey));
-            return result.DeletedCount == 0 ? new(StorageResultReason.NotFound) : new(checked((int)result.DeletedCount));
+            return (int)result.DeletedCount;
         }
 
         public async Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
@@ -75,13 +75,23 @@ namespace Haondt.Persistence.MongoDb.Services
             }).ToList();
         }
 
-        public async Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
+        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var result = await _queryableCollection.Where(q => q.ForeignKeys.Any(fk => fk == foreignKey))
                 .ToListAsync();
             return result
                 .Select(q => (q.PrimaryKey.As<T>(), TypeConverter.Coerce<T>(q.Value)))
                 .ToList();
+        }
+
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch<T>(List<StorageOperation<T>> operations) where T : notnull
+        {
+            throw new NotImplementedException();
         }
 
         public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull

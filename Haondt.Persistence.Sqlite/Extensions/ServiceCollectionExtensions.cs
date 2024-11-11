@@ -10,7 +10,8 @@ namespace Haondt.Persistence.Sqlite.Extensions
         public static IServiceCollection AddSqliteStorage(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<SqliteStorageSettings>(configuration.GetSection(nameof(SqliteStorageSettings)));
-            services.AddSingleton<IStorage, SqliteStorage>();
+            services.AddSingleton<SqliteStorage>();
+            services.AddSingleton<IStorage>(sp => new TransientTransactionalBatchStorage(sp.GetRequiredService<SqliteStorage>()));
             return services;
         }
     }

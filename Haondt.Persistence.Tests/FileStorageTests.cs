@@ -5,10 +5,10 @@ namespace Haondt.Persistence.Tests
 {
     public class FileStorageTests : AbstractStorageTests
     {
-        public FileStorageTests() : base(new FileStorage(Options.Create(new HaondtFileStorageSettings
+        public FileStorageTests() : base(new TransientTransactionalBatchStorage(new FileStorage(Options.Create(new HaondtFileStorageSettings
         {
             DataFile = "./test-data.json"
-        })))
+        }))))
         {
         }
     }

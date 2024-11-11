@@ -6,7 +6,12 @@ namespace Haondt.Persistence.Tests
 {
     public class Car
     {
-        public required string Color { get; set; }
+        public virtual required string Color { get; set; }
+    }
+
+    public class ErrorCar : Car
+    {
+        public override required string Color { get => throw new InvalidOperationException(); set => throw new InvalidOperationException(); }
     }
 
     public class Manufacturer
@@ -157,7 +162,7 @@ namespace Haondt.Persistence.Tests
             var key = StorageKey<Car>.Create(id);
             await storage.Set(key, new Car { Color = "red" });
             var result = await storage.Delete(key);
-            result.IsSuccessful.Should().BeTrue();
+            result.Should().BeTrue();
         }
 
         [Fact]
@@ -166,8 +171,7 @@ namespace Haondt.Persistence.Tests
             var id = Guid.NewGuid().ToString();
             var key = StorageKey<Car>.Create(id);
             var result = await storage.Delete(key);
-            result.IsSuccessful.Should().BeFalse();
-            result.Reason.Should().Be(StorageResultReason.NotFound);
+            result.Should().BeFalse();
         }
 
         [Fact]
@@ -248,8 +252,8 @@ namespace Haondt.Persistence.Tests
             await storage.Set(carKey2, new Car { Color = "blue" }, [manufacturerKey.Extend<Car>()]);
             await storage.Set(tireKey, new Tire { Diameter = 10 }, [manufacturerKey.Extend<Tire>()]);
 
-            var cars = await storage.GetMany(manufacturerKey.Extend<Car>());
-            var tires = await storage.GetMany(manufacturerKey.Extend<Tire>());
+            var cars = await storage.GetManyByForeignKey(manufacturerKey.Extend<Car>());
+            var tires = await storage.GetManyByForeignKey(manufacturerKey.Extend<Tire>());
 
             cars.Count.Should().Be(2);
             bool hasRed = false;
@@ -277,9 +281,8 @@ namespace Haondt.Persistence.Tests
             await storage.Set(carKey, new Car { Color = "red" }, [manufacturerKey.Extend<Car>()]);
             await storage.Set(carKey2, new Car { Color = "blue" });
 
-            var result = await storage.DeleteMany(manufacturerKey.Extend<Car>());
-            result.IsSuccessful.Should().BeTrue();
-            result.Value.Should().Be(1);
+            var result = await storage.DeleteByForeignKey(manufacturerKey.Extend<Car>());
+            result.Should().Be(1);
 
             var hasKey1 = await storage.ContainsKey(carKey);
             hasKey1.Should().BeFalse();
@@ -295,7 +298,7 @@ namespace Haondt.Persistence.Tests
 
             await storage.Set(carKey, new Car { Color = "red" }, [manufacturerKey.Extend<Car>(), manufacturerKey.Extend<Car>()]);
 
-            var result = await storage.GetMany(manufacturerKey.Extend<Car>());
+            var result = await storage.GetManyByForeignKey(manufacturerKey.Extend<Car>());
             result.Count.Should().Be(1);
             result.Single().Value.Color.Should().Be("red");
         }
@@ -311,13 +314,13 @@ namespace Haondt.Persistence.Tests
             await storage.Set(carKey, new Car { Color = "red" }, [manufacturerKey1]);
             await storage.Set(carKey, new Car { Color = "blue" }, [manufacturerKey2, manufacturerKey3]);
 
-            var result = await storage.GetMany(manufacturerKey1);
+            var result = await storage.GetManyByForeignKey(manufacturerKey1);
             result.Count.Should().Be(1);
             result.Single().Value.Color.Should().Be("blue");
-            var result2 = await storage.GetMany(manufacturerKey2);
+            var result2 = await storage.GetManyByForeignKey(manufacturerKey2);
             result2.Count.Should().Be(1);
             result2.Single().Value.Color.Should().Be("blue");
-            var result3 = await storage.GetMany(manufacturerKey3);
+            var result3 = await storage.GetManyByForeignKey(manufacturerKey3);
             result3.Count.Should().Be(1);
             result3.Single().Value.Color.Should().Be("blue");
         }
@@ -333,10 +336,395 @@ namespace Haondt.Persistence.Tests
             await storage.Set(carKey, new Car { Color = "blue" }, [manufacturerKey2]);
             await storage.Delete(carKey);
 
-            var result = await storage.GetMany(manufacturerKey1);
+            var result = await storage.GetManyByForeignKey(manufacturerKey1);
             result.Count.Should().Be(0);
-            var result2 = await storage.GetMany(manufacturerKey2);
+            var result2 = await storage.GetManyByForeignKey(manufacturerKey2);
             result2.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchSet()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new SetOperation
+                {
+                    Target = key,
+                    Value = new Car { Color = "red" }
+                },
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new Car { Color = "blue" }
+                }
+            });
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("red");
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("blue");
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchAddForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Set(key, new Car { Color = "red" });
+            await storage.Set(key3, new Car { Color = "green" });
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new Car { Color = "blue" }
+                },
+                new AddForeignKeyOperation
+                {
+                    Target = key,
+                    ForeignKey = foreignKey,
+                },
+                new AddForeignKeyOperation
+                {
+                    Target = key2,
+                    ForeignKey = foreignKey,
+                },
+            });
+
+            var cars = await storage.GetManyByForeignKey(foreignKey);
+            cars.Count.Should().Be(2);
+            bool hasRed = false;
+            bool hasBlue = false;
+
+            foreach (var car in cars)
+            {
+                if (car.Value.Color.Equals("red")) hasRed = true;
+                if (car.Value.Color.Equals("blue")) hasBlue = true;
+            }
+
+            hasRed.Should().BeTrue();
+            hasBlue.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchDelete()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            await storage.Set(key, new Car { Color = "red" });
+            await storage.Set(key2, new Car { Color = "blue" });
+            await storage.Set(key3, new Car { Color = "green" });
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteOperation
+                {
+                    Target = key,
+                },
+                new DeleteOperation
+                {
+                    Target = key2,
+                }
+            });
+
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeFalse();
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeFalse();
+
+            existing = await storage.Get(key3);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("green");
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchDeleteByForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var id4 = Guid.NewGuid().ToString();
+            var fkid1 = Guid.NewGuid().ToString();
+            var fkid2 = Guid.NewGuid().ToString();
+            var fkey = StorageKey<Car>.Create(fkid1);
+            var fkey2 = StorageKey<Car>.Create(fkid2);
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var key4 = StorageKey<Car>.Create(id4);
+            await storage.Set(key, new Car { Color = "red" }, [fkey]);
+            await storage.Set(key2, new Car { Color = "blue" }, [fkey]);
+            await storage.Set(key3, new Car { Color = "green" }, [fkey2]);
+            await storage.Set(key4, new Car { Color = "yellow" });
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteByForeignKeyOperation
+                {
+                    Target = fkey,
+                }
+            });
+
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeFalse();
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeFalse();
+
+            existing = await storage.Get(key3);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("green");
+
+            existing = await storage.Get(key4);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("yellow");
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchDeleteForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var id4 = Guid.NewGuid().ToString();
+            var fkid1 = Guid.NewGuid().ToString();
+            var fkid2 = Guid.NewGuid().ToString();
+            var fkey = StorageKey<Car>.Create(fkid1);
+            var fkey2 = StorageKey<Car>.Create(fkid2);
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var key4 = StorageKey<Car>.Create(id4);
+            await storage.Set(key, new Car { Color = "red" }, [fkey]);
+            await storage.Set(key2, new Car { Color = "blue" }, [fkey]);
+            await storage.Set(key3, new Car { Color = "green" }, [fkey2]);
+            await storage.Set(key4, new Car { Color = "yellow" });
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteForeignKeyOperation
+                {
+                    Target = fkey,
+                }
+            });
+
+            var cars = await storage.GetManyByForeignKey(fkey);
+            cars.Count.Should().Be(0);
+
+            cars = await storage.GetManyByForeignKey(fkey2);
+            cars.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchSet()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            await storage.Set(key, new Car { Color = "red" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new Car { Color = "blue" }
+                },
+                new SetOperation
+                {
+                    Target = key3,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("red");
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeFalse();
+            existing = await storage.Get(key3);
+            existing.IsSuccessful.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchAddForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Set(key, new Car { Color = "red" });
+            await storage.Set(key3, new Car { Color = "green" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new Car { Color = "blue" }
+                },
+                new AddForeignKeyOperation
+                {
+                    Target = key,
+                    ForeignKey = foreignKey,
+                },
+                new AddForeignKeyOperation
+                {
+                    Target = key2,
+                    ForeignKey = foreignKey,
+                },
+                new SetOperation
+                {
+                    Target = key3,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var cars = await storage.GetManyByForeignKey(foreignKey);
+            cars.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchDelete()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            await storage.Set(key, new Car { Color = "red" });
+            await storage.Set(key2, new Car { Color = "blue" });
+            await storage.Set(key3, new Car { Color = "green" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteOperation
+                {
+                    Target = key,
+                },
+                new DeleteOperation
+                {
+                    Target = key2,
+                },
+                new SetOperation
+                {
+                    Target = key3,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("red");
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("blue");
+
+            existing = await storage.Get(key3);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("green");
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchDeleteByForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var fkid1 = Guid.NewGuid().ToString();
+            var fkey = StorageKey<Car>.Create(fkid1);
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            await storage.Set(key, new Car { Color = "red" }, [fkey]);
+            await storage.Set(key2, new Car { Color = "blue" }, [fkey]);
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteByForeignKeyOperation
+                {
+                    Target = fkey,
+                },
+                new SetOperation
+                {
+                    Target = key,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var existing = await storage.Get(key);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("red");
+
+            existing = await storage.Get(key2);
+            existing.IsSuccessful.Should().BeTrue();
+            existing.Value.Color.Should().Be("blue");
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchDeleteForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var id4 = Guid.NewGuid().ToString();
+            var fkid1 = Guid.NewGuid().ToString();
+            var fkid2 = Guid.NewGuid().ToString();
+            var fkey = StorageKey<Car>.Create(fkid1);
+            var fkey2 = StorageKey<Car>.Create(fkid2);
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var key4 = StorageKey<Car>.Create(id4);
+            await storage.Set(key, new Car { Color = "red" }, [fkey]);
+            await storage.Set(key2, new Car { Color = "blue" }, [fkey]);
+            await storage.Set(key3, new Car { Color = "green" }, [fkey2]);
+            await storage.Set(key4, new Car { Color = "yellow" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new DeleteForeignKeyOperation
+                {
+                    Target = fkey,
+                },
+                new SetOperation
+                {
+                    Target = key,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var cars = await storage.GetManyByForeignKey(fkey);
+            cars.Count.Should().Be(2);
+            cars.Count.Should().Be(2);
+            bool hasRed = false;
+            bool hasBlue = false;
+            foreach (var car in cars)
+            {
+                if (car.Value.Color.Equals("red")) hasRed = true;
+                if (car.Value.Color.Equals("blue")) hasBlue = true;
+            }
+            hasRed.Should().BeTrue();
+            hasBlue.Should().BeTrue();
+
+            cars = await storage.GetManyByForeignKey(fkey2);
+            cars.Count.Should().Be(1);
         }
     }
 }

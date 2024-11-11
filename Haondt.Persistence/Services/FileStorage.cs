@@ -27,7 +27,7 @@ namespace Haondt.Persistence.Services
         public required object Value { get; set; }
     }
 
-    public class FileStorage : IStorage
+    public class FileStorage : ITransactionalBatchOnlyStorage
     {
         protected readonly string _dataFile;
         protected readonly JsonSerializerSettings _serializerSettings;
@@ -116,15 +116,6 @@ namespace Haondt.Persistence.Services
                 return data.Values.ContainsKey(StorageKeyConvert.Serialize(key));
             });
 
-        public Task<Result<StorageResultReason>> Delete(StorageKey key) =>
-            TryAcquireSemaphoreAnd(async () =>
-            {
-                var data = await GetDataAsync();
-                if (!data.Values.Remove(StorageKeyConvert.Serialize(key)))
-                    return new(StorageResultReason.NotFound);
-                await SetDataAsync(data);
-                return new Result<StorageResultReason>();
-            });
 
         protected T ExtractContainerValue<T>(StorageKey<T> key, DataLeaf leaf) where T : notnull
         {
@@ -155,7 +146,6 @@ namespace Haondt.Persistence.Services
                 return new Result<T, StorageResultReason>(ExtractContainerValue<T>(key, value));
             });
 
-        public Task Set<T>(StorageKey<T> key, T value) where T : notnull => SetMany<T>([(key, value)]);
 
         public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
             TryAcquireSemaphoreAnd(async () =>
@@ -176,7 +166,7 @@ namespace Haondt.Persistence.Services
             });
 
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull =>
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
@@ -188,95 +178,153 @@ namespace Haondt.Persistence.Services
                     .ToList();
             });
 
-        public Task Set<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) where T : notnull =>
-            TryAcquireSemaphoreAnd(async () =>
-            {
-                var data = await GetDataAsync();
-                var primaryKeyString = StorageKeyConvert.Serialize(primaryKey);
-                var foreignKeyStringSet = addForeignKeys
-                    .Select(fk => StorageKeyConvert.Serialize(fk))
-                    .ToHashSet();
-                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
-                {
-                    leaf.ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = value }, _jObjectSerializer);
-                    leaf.ForeignKeys.UnionWith(foreignKeyStringSet);
-                    data.Values[primaryKeyString] = leaf;
-                }
-                else
-                {
-                    data.Values[primaryKeyString] = new DataLeaf
-                    {
-                        ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = value }, _jObjectSerializer),
-                        ForeignKeys = foreignKeyStringSet
-                    };
-                }
 
-                await SetDataAsync(data);
-            });
-
-        public Task SetMany(List<(StorageKey Key, object Value)> values) =>
-            TryAcquireSemaphoreAnd(async () =>
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
+            => TryAcquireSemaphoreAnd(async () =>
             {
+                var result = new StorageOperationBatchResult();
                 var data = await GetDataAsync();
-                foreach (var value in values)
+
+                foreach (var operation in operations)
                 {
-                    var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
-                    if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                    switch (operation)
                     {
-                        leaf.ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer);
-                        data.Values[primaryKeyString] = leaf;
-                        continue;
+                        case SetOperation setOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(setOp.Target);
+                                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                {
+                                    leaf.ValueContainer = JObject.FromObject(new ValueContainer { Value = setOp.Value }, _jObjectSerializer);
+                                    data.Values[primaryKeyString] = leaf;
+                                    break;
+                                }
+
+                                data.Values[primaryKeyString] = new DataLeaf
+                                {
+                                    ValueContainer = JObject.FromObject(new ValueContainer { Value = setOp.Value }, _jObjectSerializer),
+                                };
+                                break;
+                            }
+                        case AddForeignKeyOperation addFkOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(addFkOp.Target);
+                                var foreignKeyString = StorageKeyConvert.Serialize(addFkOp.ForeignKey);
+                                if (!data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                    throw new KeyNotFoundException($"Not such key {addFkOp.Target}");
+
+                                leaf.ForeignKeys.UnionWith(new HashSet<string> { foreignKeyString });
+                                data.Values[primaryKeyString] = leaf;
+                                break;
+                            }
+                        case DeleteOperation deleteOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(deleteOp.Target);
+                                if (data.Values.Remove(primaryKeyString))
+                                    result.DeletedItems++;
+                                break;
+                            }
+                        case DeleteByForeignKeyOperation deleteByFkOp:
+                            {
+                                var foreignKeyString = StorageKeyConvert.Serialize(deleteByFkOp.Target);
+                                var primaryKeysToDelete = data.Values
+                                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
+                                    .Select(kvp => kvp.Key)
+                                    .ToList();
+
+                                foreach (var primaryKey in primaryKeysToDelete)
+                                    if (data.Values.Remove(primaryKey))
+                                        result.DeletedItems++;
+                                break;
+                            }
+                        case DeleteForeignKeyOperation deleteFkOp:
+                            {
+                                var foreignKeyString = StorageKeyConvert.Serialize(deleteFkOp.Target);
+                                foreach (var kvp in data.Values)
+                                    if (kvp.Value.ForeignKeys.Remove(foreignKeyString))
+                                        result.DeletedForeignKeys++;
+                                break;
+                            }
+                        default:
+                            throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                     }
-
-                    data.Values[primaryKeyString] = new DataLeaf
-                    {
-                        ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer),
-                    };
                 }
+
                 await SetDataAsync(data);
+                return result;
             });
 
-        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull =>
-            TryAcquireSemaphoreAnd(async () =>
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch<T>(List<StorageOperation<T>> operations) where T : notnull
+            => TryAcquireSemaphoreAnd(async () =>
             {
+                var result = new StorageOperationBatchResult();
                 var data = await GetDataAsync();
-                foreach (var value in values)
+
+                foreach (var operation in operations)
                 {
-                    var primaryKeyString = StorageKeyConvert.Serialize(value.Key);
-                    if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                    switch (operation)
                     {
-                        leaf.ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer);
-                        data.Values[primaryKeyString] = leaf;
-                        continue;
+                        case SetOperation<T> setOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(setOp.Target);
+                                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                {
+                                    leaf.ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = setOp.Value }, _jObjectSerializer);
+                                    data.Values[primaryKeyString] = leaf;
+                                    break;
+                                }
+
+                                data.Values[primaryKeyString] = new DataLeaf
+                                {
+                                    ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = setOp.Value }, _jObjectSerializer),
+                                };
+                                break;
+                            }
+                        case AddForeignKeyOperation<T> addFkOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(addFkOp.Target);
+                                var foreignKeyString = StorageKeyConvert.Serialize(addFkOp.ForeignKey);
+                                if (!data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                    throw new KeyNotFoundException($"Not such key {addFkOp.Target}");
+
+                                leaf.ForeignKeys.UnionWith(new HashSet<string> { foreignKeyString });
+                                data.Values[primaryKeyString] = leaf;
+                                break;
+                            }
+                        case DeleteOperation<T> deleteOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(deleteOp.Target);
+                                if (data.Values.Remove(primaryKeyString))
+                                    result.DeletedItems++;
+                                break;
+                            }
+                        case DeleteByForeignKeyOperation<T> deleteByFkOp:
+                            {
+                                var foreignKeyString = StorageKeyConvert.Serialize(deleteByFkOp.Target);
+                                var primaryKeysToDelete = data.Values
+                                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
+                                    .Select(kvp => kvp.Key)
+                                    .ToList();
+
+                                foreach (var primaryKey in primaryKeysToDelete)
+                                    if (data.Values.Remove(primaryKey))
+                                        result.DeletedItems++;
+                                break;
+                            }
+                        case DeleteForeignKeyOperation<T> deleteFkOp:
+                            {
+                                var foreignKeyString = StorageKeyConvert.Serialize(deleteFkOp.Target);
+                                foreach (var kvp in data.Values)
+                                    if (kvp.Value.ForeignKeys.Remove(foreignKeyString))
+                                        result.DeletedForeignKeys++;
+                                break;
+                            }
+                        default:
+                            throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                     }
-
-                    data.Values[primaryKeyString] = new DataLeaf
-                    {
-                        ValueContainer = JObject.FromObject(new ValueContainer { Value = value.Value }, _jObjectSerializer),
-                    };
                 }
+
                 await SetDataAsync(data);
-            });
-
-        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull =>
-            TryAcquireSemaphoreAnd(async () =>
-            {
-                var data = await GetDataAsync();
-                var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
-                var primaryKeysToDelete = data.Values
-                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
-                    .Select(kvp => kvp.Key)
-                    .ToList();
-
-                var deleted = 0;
-                foreach (var primaryKey in primaryKeysToDelete)
-                    if (data.Values.Remove(primaryKey))
-                        deleted++;
-
-                if (deleted == 0)
-                    return new(StorageResultReason.NotFound);
-                await SetDataAsync(data);
-                return new Result<int, StorageResultReason>(deleted);
+                return result;
             });
     }
 }

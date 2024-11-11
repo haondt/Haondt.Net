@@ -6,10 +6,11 @@ using Haondt.Persistence.Services;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace Haondt.Persistence.Postgresql.Services
 {
-    public class PostgresqlStorage : IStorage
+    public class PostgresqlStorage : ITransactionalBatchOnlyStorage
     {
         private readonly PostgresqlStorageSettings _settings;
         protected readonly JsonSerializerSettings _serializerSettings;
@@ -136,81 +137,7 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public Task Set<T>(StorageKey<T> key, T value) where T : notnull
-        {
-            return Set(key, value, []);
-        }
-
-        public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull
-        {
-            return InternalSetManyAsync([(key, value!, foreignKeys.Cast<StorageKey>().ToList())]);
-        }
-        public Task SetMany(List<(StorageKey Key, object Value)> values)
-        {
-            return InternalSetManyAsync(values.Select(v => (v.Key, v.Value, new List<StorageKey>())));
-        }
-
-        protected async Task InternalSetManyAsync(IEnumerable<(StorageKey Key, object Value, List<StorageKey> ForeignKeys)> values)
-        {
-            await WithTransactionAsync(async (connection, transaction) =>
-            {
-                foreach (var (key, value, foreignKeys) in values)
-                {
-                    var keyString = StorageKeyConvert.Serialize(key);
-                    var valueJson = JsonConvert.SerializeObject(value, _serializerSettings);
-
-                    var upsertQuery = $@"
-                        INSERT INTO {_primaryTableName} (PrimaryKey, value)
-                        VALUES (@key, @value::jsonb)
-                        ON CONFLICT (PrimaryKey) 
-                        DO UPDATE SET value = @value::jsonb;";
-                    if (_settings.StoreKeyStrings)
-                        upsertQuery = $@"
-                            INSERT INTO {_primaryTableName} (PrimaryKey, KeyString, value)
-                            VALUES (@key, @keyString, @value::jsonb)
-                            ON CONFLICT (PrimaryKey) 
-                            DO UPDATE SET value = @value::jsonb;";
-
-                    await using var upsertCommand = new NpgsqlCommand(upsertQuery, connection, transaction);
-                    upsertCommand.Parameters.AddWithValue("@key", keyString);
-                    if (_settings.StoreKeyStrings)
-                        upsertCommand.Parameters.AddWithValue("@keyString", key.ToString());
-                    upsertCommand.Parameters.AddWithValue("@value", valueJson);
-                    await upsertCommand.ExecuteNonQueryAsync();
-
-                    if (foreignKeys.Any())
-                    {
-                        var foreignKeyQuery = $@"
-                            INSERT INTO {_foreignKeyTableName} (ForeignKey, PrimaryKey)
-                            VALUES (@foreignKey, @primaryKey)
-                            ON CONFLICT (ForeignKey, PrimaryKey) DO NOTHING;";
-                        if (_settings.StoreKeyStrings)
-                            foreignKeyQuery = $@"
-                            INSERT INTO {_foreignKeyTableName} (ForeignKey, KeyString, PrimaryKey)
-                            VALUES (@foreignKey, @foreignKeyString, @primaryKey)
-                            ON CONFLICT (ForeignKey, PrimaryKey) DO NOTHING;";
-
-                        await using var foreignKeyCommand = new NpgsqlCommand(foreignKeyQuery, connection, transaction);
-                        foreignKeyCommand.Parameters.AddWithValue("@primaryKey", keyString);
-
-                        var foreignKeyParam = foreignKeyCommand.Parameters.Add("@foreignKey", NpgsqlTypes.NpgsqlDbType.Text);
-                        NpgsqlParameter? foreignKeyStringParam = null;
-                        if (_settings.StoreKeyStrings)
-                            foreignKeyStringParam = foreignKeyCommand.Parameters.Add("@foreignKeyString", NpgsqlTypes.NpgsqlDbType.Text);
-
-                        foreach (var foreignKey in foreignKeys)
-                        {
-                            foreignKeyParam.Value = StorageKeyConvert.Serialize(foreignKey);
-                            if (foreignKeyStringParam != null)
-                                foreignKeyStringParam.Value = foreignKey.ToString();
-                            await foreignKeyCommand.ExecuteNonQueryAsync();
-                        }
-                    }
-                }
-            });
-        }
-
-        public async Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
+        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(foreignKey);
             return await WithConnectionAsync(async connection =>
@@ -242,30 +169,6 @@ namespace Haondt.Persistence.Postgresql.Services
 
                 return results;
             });
-        }
-
-        public async Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
-        {
-            var keyString = StorageKeyConvert.Serialize(foreignKey);
-
-            var rowsAffected = await WithTransactionAsync(async (connection, transaction) =>
-            {
-                var query = $@"
-                    DELETE FROM {_primaryTableName}
-                    WHERE PrimaryKey IN (
-                        SELECT PrimaryKey
-                        FROM {_foreignKeyTableName}
-                        WHERE ForeignKey = @key
-                    )";
-
-                await using var command = new NpgsqlCommand(query, connection, transaction);
-                command.Parameters.AddWithValue("@key", keyString);
-                return await command.ExecuteNonQueryAsync();
-            });
-
-            if (rowsAffected == 0)
-                return new Result<int, StorageResultReason>(StorageResultReason.NotFound);
-            return new Result<int, StorageResultReason>(rowsAffected);
         }
 
         public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
@@ -309,23 +212,312 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public async Task<Result<StorageResultReason>> Delete(StorageKey key)
-        {
-            var keyString = StorageKeyConvert.Serialize(key);
-            var rowsAffected = await WithConnectionAsync(async connection =>
-            {
-                string query = $"DELETE FROM {_primaryTableName} WHERE PrimaryKey = @key";
-                await using var command = new NpgsqlCommand(query, connection);
-                command.Parameters.AddWithValue("@key", keyString);
-                return await command.ExecuteNonQueryAsync();
-            });
 
-            if (rowsAffected == 0)
-                return new Result<StorageResultReason>(StorageResultReason.NotFound);
-            return new Result<StorageResultReason>();
+        private (NpgsqlCommand Command, List<NpgsqlParameter> Parameters) BuildCommand(
+            NpgsqlConnection connection,
+            NpgsqlTransaction transaction,
+            string commandText, List<(string Name, NpgsqlDbType Type)> parameters)
+        {
+            var command = new NpgsqlCommand(commandText, connection, transaction);
+            var parametersList = new List<NpgsqlParameter>();
+            foreach (var (name, type) in parameters)
+                parametersList.Add(command.Parameters.Add(name, type));
+
+            return (command, parametersList);
         }
 
-        public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
-            => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object)kvp.Value)).ToList());
+        private (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters) GetDeleteForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var query = $"DELETE FROM {_foreignKeyTableName} WHERE ForeignKey = @key";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                [("@key", NpgsqlDbType.Text)]);
+            var parameter = parameterList.Single();
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (k) =>
+            {
+                parameter.Value = StorageKeyConvert.Serialize(k);
+            }
+            );
+        }
+
+        private (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters) GetDeleteByForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var query = $@"
+                DELETE FROM {_primaryTableName}
+                WHERE PrimaryKey IN (
+                    SELECT PrimaryKey
+                    FROM {_foreignKeyTableName}
+                    WHERE ForeignKey = @key
+                )";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                [("@key", NpgsqlDbType.Text)]);
+            var parameter = parameterList.Single();
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (k) =>
+            {
+                parameter.Value = StorageKeyConvert.Serialize(k);
+            }
+            );
+        }
+
+        private (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters) GetDeleteCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var query = $"DELETE FROM {_primaryTableName} WHERE PrimaryKey = @key";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                [("@key", NpgsqlDbType.Text)]);
+            var parameter = parameterList.Single();
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (k) =>
+            {
+                parameter.Value = StorageKeyConvert.Serialize(k);
+            }
+            );
+        }
+
+        private (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters) GetUpsertCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var columns = "PrimaryKey, value";
+            var parameters = new List<(string, NpgsqlDbType)>
+            {
+                ("@key", NpgsqlDbType.Text),
+                ("@value", NpgsqlDbType.Jsonb)
+            };
+            if (_settings.StoreKeyStrings)
+            {
+                columns += ", KeyString";
+                parameters.Add(("@keyString", NpgsqlDbType.Text));
+            }
+            var parameterString = string.Join(", ", parameters.Select(p => p.Item2 == NpgsqlDbType.Jsonb ? $"{p.Item1}::jsonb" : p.Item1));
+            var upsertQuery = $@"
+                INSERT INTO {_primaryTableName} ({columns})
+                VALUES ({parameterString})
+                ON CONFLICT (PrimaryKey) 
+                DO UPDATE SET value = @value::jsonb;";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                upsertQuery,
+                parameters);
+
+            var parameterDict = parameterList.Zip(parameters, (p, t) => (p, t))
+                .ToDictionary(t => t.t.Item1, t => t.p);
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (k, v) =>
+            {
+                parameterDict["@key"].Value = StorageKeyConvert.Serialize(k);
+                parameterDict["@value"].Value = JsonConvert.SerializeObject(v, _serializerSettings);
+                if (_settings.StoreKeyStrings)
+                    parameterDict["@keyString"].Value = k.ToString();
+            }
+            );
+        }
+
+        private (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters) GetAddForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var columns = "ForeignKey, PrimaryKey";
+            var parameters = new List<(string, NpgsqlDbType)>
+            {
+                ("@foreignKey", NpgsqlDbType.Text),
+                ("@primaryKey", NpgsqlDbType.Text)
+            };
+            if (_settings.StoreKeyStrings)
+            {
+                columns += ", KeyString";
+                parameters.Add(("@keyString", NpgsqlDbType.Text));
+            }
+            var parameterString = string.Join(", ", parameters.Select(p => p.Item2 == NpgsqlDbType.Jsonb ? $"{p.Item1}::jsonb" : p.Item1));
+            var query = $@"
+                INSERT INTO {_foreignKeyTableName} ({columns})
+                VALUES ({parameterString})
+                ON CONFLICT (ForeignKey, PrimaryKey) DO NOTHING;";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                parameters);
+            var parameterDict = parameterList.Zip(parameters, (p, t) => (p, t))
+                .ToDictionary(t => t.t.Item1, t => t.p);
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (pk, fk) =>
+            {
+                parameterDict["@primaryKey"].Value = StorageKeyConvert.Serialize(pk);
+                parameterDict["@foreignKey"].Value = StorageKeyConvert.Serialize(fk);
+                if (_settings.StoreKeyStrings)
+                    parameterDict["@keyString"].Value = fk.ToString();
+            }
+            );
+        }
+
+        public async Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
+        {
+            var result = new StorageOperationBatchResult();
+
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+
+            try
+            {
+                await WithTransactionAsync(async (connection, transaction) =>
+                {
+                    foreach (var operation in operations)
+                    {
+                        switch (operation)
+                        {
+                            case SetOperation setOp:
+                                {
+                                    upsertCommand ??= GetUpsertCommand(connection, transaction);
+                                    upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
+                                    await upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddForeignKeyOperation addFkOp:
+                                {
+                                    addForeignKeyCommand ??= GetAddForeignKeyCommand(connection, transaction);
+                                    addForeignKeyCommand.Value.SetParameters(addFkOp.Target, addFkOp.ForeignKey);
+                                    await addForeignKeyCommand.Value.Command();
+                                    break;
+                                }
+                            case DeleteOperation deleteOp:
+                                {
+                                    deleteCommand ??= GetDeleteCommand(connection, transaction);
+                                    deleteCommand.Value.SetParameters(deleteOp.Target);
+                                    var deleted = await deleteCommand.Value.Command();
+                                    result.DeletedItems += deleted;
+                                    break;
+                                }
+                            case DeleteByForeignKeyOperation deleteByFkOp:
+                                {
+                                    deleteByForeignKeyCommand ??= GetDeleteByForeignKeyCommand(connection, transaction);
+                                    deleteByForeignKeyCommand.Value.SetParameters(deleteByFkOp.Target);
+                                    var deleted = await deleteByForeignKeyCommand.Value.Command();
+                                    result.DeletedItems += deleted;
+                                    break;
+                                }
+                            case DeleteForeignKeyOperation deleteFkOp:
+                                {
+                                    deleteForeignKeyCommand ??= GetDeleteForeignKeyCommand(connection, transaction);
+                                    deleteForeignKeyCommand.Value.SetParameters(deleteFkOp.Target);
+                                    var deleted = await deleteForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += deleted;
+                                    break;
+                                }
+                            default:
+                                throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                if (upsertCommand.HasValue)
+                    await upsertCommand.Value.DisposeAsync();
+                if (addForeignKeyCommand.HasValue)
+                    await addForeignKeyCommand.Value.DisposeAsync();
+                if (deleteCommand.HasValue)
+                    await deleteCommand.Value.DisposeAsync();
+                if (deleteByForeignKeyCommand.HasValue)
+                    await deleteByForeignKeyCommand.Value.DisposeAsync();
+                if (deleteForeignKeyCommand.HasValue)
+                    await deleteForeignKeyCommand.Value.DisposeAsync();
+            }
+
+            return result;
+        }
+
+        public async Task<StorageOperationBatchResult> PerformTransactionalBatch<T>(List<StorageOperation<T>> operations) where T : notnull
+        {
+            var result = new StorageOperationBatchResult();
+
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+
+            try
+            {
+                await WithTransactionAsync(async (connection, transaction) =>
+                {
+                    foreach (var operation in operations)
+                    {
+                        switch (operation)
+                        {
+                            case SetOperation<T> setOp:
+                                {
+                                    upsertCommand ??= GetUpsertCommand(connection, transaction);
+                                    upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
+                                    await upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddForeignKeyOperation<T> addFkOp:
+                                {
+                                    addForeignKeyCommand ??= GetAddForeignKeyCommand(connection, transaction);
+                                    addForeignKeyCommand.Value.SetParameters(addFkOp.Target, addFkOp.ForeignKey);
+                                    await addForeignKeyCommand.Value.Command();
+                                    break;
+                                }
+                            case DeleteOperation<T> deleteOp:
+                                {
+                                    deleteCommand ??= GetDeleteCommand(connection, transaction);
+                                    deleteCommand.Value.SetParameters(deleteOp.Target);
+                                    var deleted = await deleteCommand.Value.Command();
+                                    result.DeletedItems += deleted;
+                                    break;
+                                }
+                            case DeleteByForeignKeyOperation<T> deleteByFkOp:
+                                {
+                                    deleteByForeignKeyCommand ??= GetDeleteByForeignKeyCommand(connection, transaction);
+                                    deleteByForeignKeyCommand.Value.SetParameters(deleteByFkOp.Target);
+                                    var deleted = await deleteByForeignKeyCommand.Value.Command();
+                                    result.DeletedItems += deleted;
+                                    break;
+                                }
+                            case DeleteForeignKeyOperation<T> deleteFkOp:
+                                {
+                                    deleteForeignKeyCommand ??= GetDeleteForeignKeyCommand(connection, transaction);
+                                    deleteForeignKeyCommand.Value.SetParameters(deleteFkOp.Target);
+                                    var deleted = await deleteForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += deleted;
+                                    break;
+                                }
+                            default:
+                                throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                if (upsertCommand.HasValue)
+                    await upsertCommand.Value.DisposeAsync();
+                if (addForeignKeyCommand.HasValue)
+                    await addForeignKeyCommand.Value.DisposeAsync();
+                if (deleteCommand.HasValue)
+                    await deleteCommand.Value.DisposeAsync();
+                if (deleteByForeignKeyCommand.HasValue)
+                    await deleteByForeignKeyCommand.Value.DisposeAsync();
+                if (deleteForeignKeyCommand.HasValue)
+                    await deleteForeignKeyCommand.Value.DisposeAsync();
+            }
+
+            return result;
+        }
     }
 }

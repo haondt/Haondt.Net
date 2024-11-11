@@ -144,6 +144,7 @@ namespace Haondt.Identity.StorageKey
     {
         public static StorageKey<T> As<T>(this StorageKey storageKey) where T : notnull => StorageKey<T>.Create(storageKey.Parts);
 
+
         public static StorageKey AsGeneric(this StorageKey storageKey)
         {
             var storageKeyType = typeof(StorageKey<>).MakeGenericType(storageKey.Parts[^1].Type);

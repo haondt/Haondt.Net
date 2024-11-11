@@ -1,12 +1,13 @@
 ﻿using Haondt.Identity.StorageKey;
 using Haondt.Persistence.Postgresql.Services;
+using Haondt.Persistence.Services;
 using Microsoft.Extensions.Options;
 
 namespace Haondt.Persistence.Tests
 {
     public class PostgresqlStorageTests : AbstractStorageTests
     {
-        public PostgresqlStorageTests() : base(new PostgresqlStorage(Options.Create(new PostgresqlStorageSettings
+        public PostgresqlStorageTests() : base(new TransientTransactionalBatchStorage(new PostgresqlStorage(Options.Create(new PostgresqlStorageSettings
         {
             Host = "localhost",
             Database = "haondt",
@@ -16,7 +17,7 @@ namespace Haondt.Persistence.Tests
             PrimaryTableName = "haondt",
             Port = 3432,
             StoreKeyStrings = true
-        })))
+        }))))
         {
             StorageKeyConvert.DefaultSerializerSettings = new StorageKeySerializerSettings
             {

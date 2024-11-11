@@ -16,14 +16,12 @@ namespace Haondt.Persistence.Services
 
         public Task<bool> ContainsKey(StorageKey key) => Task.FromResult(_storage.ContainsKey(key));
 
-        public Task<Result<StorageResultReason>> Delete(StorageKey key)
+        public Task<bool> Delete(StorageKey key)
         {
-            if (_storage.Remove(key))
-                return Task.FromResult(new Result<StorageResultReason>());
-            return Task.FromResult(new Result<StorageResultReason>(StorageResultReason.NotFound));
+            return Task.FromResult(_storage.Remove(key));
         }
 
-        public Task<Result<int, StorageResultReason>> DeleteMany<T>(StorageKey<T> foreignKey) where T : notnull
+        public Task<int> DeleteByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
         {
             var keysToRemove = _storage.Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
                 .Select(kvp => kvp.Key);
@@ -33,8 +31,7 @@ namespace Haondt.Persistence.Services
                 _storage.Remove(key);
                 removed++;
             }
-
-            return Task.FromResult<Result<int, StorageResultReason>>(removed > 0 ? new(removed) : new(StorageResultReason.NotFound));
+            return Task.FromResult(removed);
         }
 
 
@@ -45,7 +42,7 @@ namespace Haondt.Persistence.Services
             return Task.FromResult(new Result<T, StorageResultReason>(StorageResultReason.NotFound));
         }
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetMany<T>(StorageKey<T> foreignKey) where T : notnull
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
         {
             return Task.FromResult(_storage
                 .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
@@ -73,6 +70,140 @@ namespace Haondt.Persistence.Services
                     return new(value.Value);
                 return new Result<object, StorageResultReason>(StorageResultReason.NotFound);
             }).ToList());
+        }
+
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
+        {
+            var newStorage = _storage.ToDictionary(kvp => kvp.Key, kvp => new MemoryEntry
+            {
+                Value = kvp.Value.Value,
+                ForeignKeys = kvp.Value.ForeignKeys.ToHashSet()
+            });
+
+            var result = new StorageOperationBatchResult();
+
+            foreach (var operation in operations)
+            {
+                switch (operation)
+                {
+                    case SetOperation setOp:
+                        {
+                            if (newStorage.TryGetValue(setOp.Target, out var memoryEntry))
+                                memoryEntry.Value = setOp.Value;
+                            else
+                                newStorage[setOp.Target] = new MemoryEntry { Value = setOp.Value };
+                            break;
+                        }
+                    case AddForeignKeyOperation addFkOp:
+                        {
+                            if (!newStorage.TryGetValue(addFkOp.Target, out var memoryEntry))
+                                throw new ArgumentException($"No such primary key {addFkOp.Target}");
+                            memoryEntry.ForeignKeys.Add(addFkOp.ForeignKey);
+                            break;
+                        }
+                    case DeleteOperation deleteOp:
+                        {
+                            if (newStorage.Remove(deleteOp.Target))
+                                result.DeletedItems++;
+                            break;
+                        }
+                    case DeleteByForeignKeyOperation deleteByFkOp:
+                        {
+
+                            var keysToRemove = newStorage.Where(kvp => kvp.Value.ForeignKeys.Contains(deleteByFkOp.Target))
+                                .Select(kvp => kvp.Key);
+                            foreach (var key in keysToRemove)
+                            {
+                                newStorage.Remove(key);
+                                result.DeletedItems++;
+                            }
+                            break;
+                        }
+                    case DeleteForeignKeyOperation deleteFkOp:
+                        {
+                            foreach (var kvp in newStorage)
+                                if (kvp.Value.ForeignKeys.Remove(deleteFkOp.Target))
+                                    result.DeletedForeignKeys++;
+                            break;
+                        }
+                    default:
+                        throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
+                }
+            }
+
+            var mainKeysToRemove = _storage.Keys.Where(k => !newStorage.ContainsKey(k));
+            foreach (var key in mainKeysToRemove)
+                _storage.Remove(key);
+            foreach (var (key, value) in newStorage)
+                _storage[key] = value;
+            return Task.FromResult(result);
+        }
+
+        public Task<StorageOperationBatchResult> PerformTransactionalBatch<T>(List<StorageOperation<T>> operations) where T : notnull
+        {
+            var newStorage = _storage.ToDictionary(kvp => kvp.Key, kvp => new MemoryEntry
+            {
+                Value = kvp.Value,
+                ForeignKeys = kvp.Value.ForeignKeys.ToHashSet()
+            });
+
+            var result = new StorageOperationBatchResult();
+
+            foreach (var operation in operations)
+            {
+                switch (operation)
+                {
+                    case SetOperation<T> setOp:
+                        {
+                            if (newStorage.TryGetValue(setOp.Target, out var memoryEntry))
+                                memoryEntry.Value = setOp.Value;
+                            else
+                                newStorage[setOp.Target] = new MemoryEntry { Value = setOp.Value };
+                            break;
+                        }
+                    case AddForeignKeyOperation<T> addFkOp:
+                        {
+                            if (!newStorage.TryGetValue(addFkOp.Target, out var memoryEntry))
+                                throw new ArgumentException($"No such primary key {addFkOp.Target}");
+                            memoryEntry.ForeignKeys.Add(addFkOp.ForeignKey);
+                            break;
+                        }
+                    case DeleteOperation<T> deleteOp:
+                        {
+                            if (newStorage.Remove(deleteOp.Target))
+                                result.DeletedItems++;
+                            break;
+                        }
+                    case DeleteByForeignKeyOperation<T> deleteByFkOp:
+                        {
+
+                            var keysToRemove = newStorage.Where(kvp => kvp.Value.ForeignKeys.Contains(deleteByFkOp.Target))
+                                .Select(kvp => kvp.Key);
+                            foreach (var key in keysToRemove)
+                            {
+                                newStorage.Remove(key);
+                                result.DeletedItems++;
+                            }
+                            break;
+                        }
+                    case DeleteForeignKeyOperation<T> deleteFkOp:
+                        {
+                            foreach (var kvp in newStorage)
+                                if (kvp.Value.ForeignKeys.Remove(deleteFkOp.Target))
+                                    result.DeletedForeignKeys++;
+                            break;
+                        }
+                    default:
+                        throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
+                }
+            }
+
+            var mainKeysToRemove = _storage.Keys.Where(k => !newStorage.ContainsKey(k));
+            foreach (var key in mainKeysToRemove)
+                _storage.Remove(key);
+            foreach (var (key, value) in newStorage)
+                _storage[key] = value;
+            return Task.FromResult(result);
         }
 
         public Task Set<T>(StorageKey<T> key, T value, List<StorageKey<T>> foreignKeys) where T : notnull

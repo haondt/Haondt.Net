@@ -10,7 +10,8 @@ namespace Haondt.Persistence.Postgresql.Extensions
         public static IServiceCollection AddPostgresqlStorage(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<PostgresqlStorageSettings>(configuration.GetSection(nameof(PostgresqlStorageSettings)));
-            services.AddSingleton<IStorage, PostgresqlStorage>();
+            services.AddSingleton<PostgresqlStorage>();
+            services.AddSingleton<IStorage>(sp => new TransientTransactionalBatchStorage(sp.GetRequiredService<PostgresqlStorage>()));
             return services;
         }
     }

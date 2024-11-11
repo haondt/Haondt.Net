@@ -15,7 +15,8 @@ namespace Haondt.Persistence.Extensions
         public static IServiceCollection AddFileStorage(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<HaondtFileStorageSettings>(configuration.GetSection(nameof(HaondtFileStorageSettings)));
-            services.AddSingleton<IStorage, FileStorage>();
+            services.AddSingleton<FileStorage>();
+            services.AddSingleton<IStorage>(sp => new TransientTransactionalBatchStorage(sp.GetRequiredService<FileStorage>()));
             return services;
         }
     }
