@@ -123,14 +123,14 @@ namespace Haondt.Persistence.Services
         }
         protected T ExtractContainerValue<T>(string key, DataLeaf leaf) where T : notnull
         {
-            var container = leaf.ValueContainer.ToObject<ValueContainer<T>>()
+            var container = leaf.ValueContainer.ToObject<ValueContainer<T>>(_jObjectSerializer)
                 ?? throw new InvalidCastException($"Cannot convert {key} to type {typeof(T)}");
             return container.Value;
         }
         protected object ExtractContainerValue(StorageKey key, DataLeaf leaf)
         {
             var genericType = typeof(ValueContainer<>).MakeGenericType(key.Type);
-            var container = leaf.ValueContainer.ToObject(genericType)
+            var container = leaf.ValueContainer.ToObject(genericType, _jObjectSerializer)
                 ?? throw new InvalidCastException($"Cannot convert {key} to type {key.Type}");
             var genericParameter = genericType.GetProperty(nameof(ValueContainer<object>.Value))!;
             return genericParameter.GetValue(container)!;
