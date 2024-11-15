@@ -232,5 +232,12 @@ namespace Haondt.Persistence.Services
 
         public Task SetMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
             => SetMany(values.Select(kvp => ((StorageKey)kvp.Key, (object)kvp.Value)).ToList());
+
+        public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull
+        {
+            if (_storage.TryGetValue(primaryKey, out var value))
+                return Task.FromResult(value.ForeignKeys.Select(k => k.As<T>()).ToList());
+            return Task.FromResult<List<StorageKey<T>>>([]);
+        }
     }
 }

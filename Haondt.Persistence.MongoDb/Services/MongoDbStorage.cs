@@ -51,6 +51,15 @@ namespace Haondt.Persistence.MongoDb.Services
             return new(TypeConverter.Coerce<T>(result.First().Value));
         }
 
+        public async Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull
+        {
+            var result = await _queryableCollection.Where(q => q.PrimaryKey == primaryKey)
+                .ToListAsync();
+            if (result.Count == 0)
+                return [];
+            return result.First().ForeignKeys.Select(k => k.As<T>()).ToList();
+        }
+
         public async Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             var foundItems = await _queryableCollection.Where(q => keys.Contains(q.PrimaryKey)).ToListAsync();

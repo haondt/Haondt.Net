@@ -189,6 +189,8 @@ namespace Haondt.Identity.StorageKey
             => StorageKey<T>.Create(storageKey.Parts.Skip(1)
                 .Prepend(new StorageKeyPart(storageKey.First().Type, "")).ToList());
 
-
+        public static StorageKeyPart Single(this StorageKey storageKey) => storageKey.Parts.Single();
+        public static string SingleValue(this StorageKey storageKey) => storageKey.Parts.Single().Value;
+        public static T SingleValue<T>(this StorageKey storageKey) where T : notnull => storageKey.Parts.Single().Value<T>();
     }
 }

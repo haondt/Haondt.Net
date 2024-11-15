@@ -726,5 +726,40 @@ namespace Haondt.Persistence.Tests
             cars = await storage.GetManyByForeignKey(fkey2);
             cars.Count.Should().Be(1);
         }
+
+        [Fact]
+        public async Task WillRetrieveForeignKeys()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var id4 = Guid.NewGuid().ToString();
+            var fkid1 = Guid.NewGuid().ToString();
+            var fkid2 = Guid.NewGuid().ToString();
+            var fkey = StorageKey<Car>.Create(fkid1);
+            var fkey2 = StorageKey<Car>.Create(fkid2);
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var key4 = StorageKey<Car>.Create(id4);
+            await storage.Set(key, new Car { Color = "red" }, [fkey]);
+            await storage.Set(key2, new Car { Color = "blue" }, [fkey, fkey2]);
+            await storage.Set(key4, new Car { Color = "yellow" });
+
+            var set1 = await storage.GetForeignKeys(key);
+            set1.Should().HaveCount(1); ;
+            set1.Single().SingleValue().Should().Be(fkid1);
+
+            var set2 = await storage.GetForeignKeys(key2);
+            set2.Should().HaveCount(2); ;
+            var ids = set2.Select(sk => sk.SingleValue()).ToList();
+            ids.Should().Contain(fkid1);
+            ids.Should().Contain(fkid2);
+
+            var set3 = await storage.GetForeignKeys(key3);
+            set3.Should().BeEmpty();
+            var set4 = await storage.GetForeignKeys(key4);
+            set4.Should().BeEmpty();
+        }
     }
 }

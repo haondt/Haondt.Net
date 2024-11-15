@@ -574,6 +574,36 @@ namespace Haondt.Persistence.Sqlite.Services
 
             return Task.FromResult(result);
         }
+
+        public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull
+        {
+            var keyString = StorageKeyConvert.Serialize(primaryKey);
+            var result = WithConnection(connection =>
+            {
+                var query = $@"
+                    SELECT ForeignKey
+                    FROM {_foreignKeyTableName}
+                    WHERE PrimaryKey = @key";
+
+                using var command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@key", keyString);
+
+                var results = new List<StorageKey<T>>();
+                using var reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    var foreignKeyString = reader.GetString(0);
+                    var foreignKey = StorageKeyConvert.Deserialize<T>(foreignKeyString)
+                        ?? throw new JsonException("Unable to deserialize key");
+                    results.Add(foreignKey);
+                }
+
+                return results;
+            });
+
+            return Task.FromResult(result);
+        }
     }
 }
 

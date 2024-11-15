@@ -10,6 +10,7 @@ namespace Haondt.Persistence.Services
         public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) => inner.GetMany(primaryKeys);
         public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull => inner.GetMany(primaryKeys);
         public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull => inner.GetManyByForeignKey(foreignKey);
+        public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull => inner.GetForeignKeys<T>(primaryKey);
 
         public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations) => inner.PerformTransactionalBatch(operations);
         public Task<StorageOperationBatchResult> PerformTransactionalBatch<T>(List<StorageOperation<T>> operations) where T : notnull => inner.PerformTransactionalBatch(operations);
@@ -81,5 +82,6 @@ namespace Haondt.Persistence.Services
                     Target = t.Key,
                     Value = t.Value
                 }).Cast<StorageOperation<T>>().ToList());
+
     }
 }

@@ -11,5 +11,6 @@ namespace Haondt.Persistence.Services
         Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys);
         Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull;
         Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull;
+        Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull;
     }
 }

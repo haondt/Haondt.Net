@@ -326,5 +326,15 @@ namespace Haondt.Persistence.Services
                 await SetDataAsync(data);
                 return result;
             });
+
+        public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                var stringKey = StorageKeyConvert.Serialize(primaryKey);
+                if (!data.Values.TryGetValue(stringKey, out var value))
+                    return [];
+                return value.ForeignKeys.Select(fk => StorageKeyConvert.Deserialize<T>(fk)).ToList();
+            });
     }
 }

@@ -519,5 +519,33 @@ namespace Haondt.Persistence.Postgresql.Services
 
             return result;
         }
+
+        public async Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull
+        {
+            var keyString = StorageKeyConvert.Serialize(primaryKey);
+            return await WithConnectionAsync(async connection =>
+            {
+                var query = $@"
+                    SELECT ForeignKey
+                    FROM {_foreignKeyTableName}
+                    WHERE PrimaryKey = @key";
+
+                await using var command = new NpgsqlCommand(query, connection);
+                command.Parameters.AddWithValue("@key", keyString);
+
+                var results = new List<StorageKey<T>>();
+                await using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var primaryKeyString = reader.GetString(0);
+                    var primaryKey = StorageKeyConvert.Deserialize<T>(primaryKeyString)
+                        ?? throw new JsonException("Unable to deserialize key");
+                    results.Add(primaryKey);
+                }
+
+                return results;
+            });
+        }
     }
 }
