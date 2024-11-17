@@ -508,7 +508,7 @@ namespace Haondt.Persistence.Sqlite.Services
 
             try
             {
-                WithTransaction(async (connection, transaction) =>
+                WithTransaction((connection, transaction) =>
                 {
                     foreach (var operation in operations)
                     {

@@ -8,8 +8,8 @@ namespace Haondt.Web.Core.Components
         public string Identity { get; }
         public string ViewPath { get; }
         public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; }
-        public Optional<Func<IComponentFactory, IRequestData, Task<IComponentModel>>> DefaultModelFactory { get; }
         public Optional<Func<IComponentFactory, Task<IComponentModel>>> DefaultNoRequestDataModelFactory { get; }
+        public Optional<Func<IComponentFactory, IRequestData, Task<(IComponentModel, Optional<Action<IHttpResponseMutator>>)>>> DefaultModelFactory { get; }
     }
     public interface IComponentDescriptor<T> where T : IComponentModel
     {
@@ -17,7 +17,7 @@ namespace Haondt.Web.Core.Components
         public string ViewPath { get; }
         public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; }
 
-        public Optional<Func<IComponentFactory, IRequestData, Task<T>>> DefaultModelFactory { get; }
         public Optional<Func<IComponentFactory, Task<T>>> DefaultNoRequestDataModelFactory { get; }
+        public Optional<Func<IComponentFactory, IRequestData, Task<(T, Optional<Action<IHttpResponseMutator>>)>>> DefaultModelFactory { get; }
     }
 }

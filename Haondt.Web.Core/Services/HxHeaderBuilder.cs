@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Haondt.Web.Core.Http;
+using Newtonsoft.Json;
 
 namespace Haondt.Web.Core.Services
 {
@@ -79,6 +80,16 @@ namespace Haondt.Web.Core.Services
                 foreach (var action in actions)
                     action.Invoke(h);
             };
+        }
+
+    }
+
+    public static class HxHeaderBuilderExtensions
+    {
+        public static Action<IHttpResponseMutator> BuildResponseMutator(this HxHeaderBuilder builder)
+        {
+            var headerDictionaryMutator = builder.Build();
+            return (m => m.ConfigureHeadersAction = headerDictionaryMutator);
         }
     }
 }

@@ -17,24 +17,24 @@ namespace Haondt.Web.Core.Components
             if (!_descriptors.TryGetValue(componentIdentity, out var descriptor))
                 throw new MissingComponentException(componentIdentity);
 
-            var combinedConfigureResponse = new Optional<Action<IHttpResponseMutator>>();
+            var responseConfigurationSteps = new List<Action<IHttpResponseMutator>>();
+            if (descriptor.ConfigureResponse.HasValue)
+                responseConfigurationSteps.Add(descriptor.ConfigureResponse.Value);
+            if (configureResponse != null)
+                responseConfigurationSteps.Add(configureResponse);
 
-            if (descriptor.ConfigureResponse.HasValue || configureResponse != null)
-            {
-                combinedConfigureResponse = new(m =>
-                {
-                    if (descriptor.ConfigureResponse.HasValue)
-                        descriptor.ConfigureResponse.Value(m);
-                    configureResponse?.Invoke(m);
-                });
-            }
-
-            var model = await GetModel(providedModel, requestData, descriptor);
+            var (model, additionalConfiguration) = await GetModel(providedModel, requestData, descriptor);
+            if (additionalConfiguration.HasValue)
+                responseConfigurationSteps.Add(additionalConfiguration.Value);
 
             return new Component
             {
                 ViewPath = descriptor.ViewPath,
-                ConfigureResponse = combinedConfigureResponse,
+                ConfigureResponse = responseConfigurationSteps.Count == 0 ? new() : new(m =>
+                {
+                    foreach (var action in responseConfigurationSteps)
+                        action.Invoke(m);
+                }),
                 Model = model
             };
         }
@@ -52,33 +52,32 @@ namespace Haondt.Web.Core.Components
             if (descriptor is not ComponentDescriptor<T> typedDescriptor)
                 throw new InvalidCastException($"Component descriptor has an identity of {componentIdentity}, was expecting type {typeof(ComponentDescriptor<T>)} but found {descriptor.GetType()}");
 
-            var combinedConfigureResponse = new Optional<Action<IHttpResponseMutator>>();
+            var responseConfigurationSteps = new List<Action<IHttpResponseMutator>>();
+            if (descriptor.ConfigureResponse.HasValue)
+                responseConfigurationSteps.Add(descriptor.ConfigureResponse.Value);
+            if (configureResponse != null)
+                responseConfigurationSteps.Add(configureResponse);
 
-            if (descriptor.ConfigureResponse.HasValue || configureResponse != null)
-            {
-                combinedConfigureResponse = new(m =>
-                {
-                    if (descriptor.ConfigureResponse.HasValue)
-                        descriptor.ConfigureResponse.Value(m);
-                    configureResponse?.Invoke(m);
-                });
-            }
-
-            var model = await GetModel<T>(providedModel, requestData, typedDescriptor);
+            var (model, additionalConfiguration) = await GetModel<T>(providedModel, requestData, typedDescriptor);
+            if (additionalConfiguration.HasValue)
+                responseConfigurationSteps.Add(additionalConfiguration.Value);
 
             return new Component<T>
             {
                 ViewPath = descriptor.ViewPath,
-                ConfigureResponse = combinedConfigureResponse,
+                ConfigureResponse = responseConfigurationSteps.Count == 0 ? new() : new(m =>
+                {
+                    foreach (var action in responseConfigurationSteps)
+                        action.Invoke(m);
+                }),
                 Model = model
             };
-
         }
 
-        private async Task<IComponentModel> GetModel(IComponentModel? providedModel, IRequestData? providedRequestData,IComponentDescriptor descriptor)
+        private async Task<(IComponentModel Model, Optional<Action<IHttpResponseMutator>> AdditionalConfiguration)> GetModel(IComponentModel? providedModel, IRequestData? providedRequestData, IComponentDescriptor descriptor)
         {
             if (providedModel != null)
-                return providedModel;
+                return (providedModel, new());
 
             if (descriptor.DefaultModelFactory.HasValue)
             {
@@ -89,15 +88,15 @@ namespace Haondt.Web.Core.Components
             }
 
             if (descriptor.DefaultNoRequestDataModelFactory.HasValue)
-                return await descriptor.DefaultNoRequestDataModelFactory.Value(this);
+                return (await descriptor.DefaultNoRequestDataModelFactory.Value(this), new());
 
             throw new InvalidOperationException($"Unable to render component {descriptor.Identity}");
         }
 
-        private async Task<T> GetModel<T>(T? providedModel, IRequestData? providedRequestData, IComponentDescriptor<T> descriptor) where T : IComponentModel
+        private async Task<(T Model, Optional<Action<IHttpResponseMutator>> AdditionalConfiguration)> GetModel<T>(T? providedModel, IRequestData? providedRequestData, IComponentDescriptor<T> descriptor) where T : IComponentModel
         {
             if (providedModel != null)
-                return providedModel;
+                return (providedModel, new());
 
             if (descriptor.DefaultModelFactory.HasValue)
             {
@@ -108,7 +107,7 @@ namespace Haondt.Web.Core.Components
             }
 
             if (descriptor.DefaultNoRequestDataModelFactory.HasValue)
-                return await descriptor.DefaultNoRequestDataModelFactory.Value(this);
+                return (await descriptor.DefaultNoRequestDataModelFactory.Value(this), new());
 
             throw new InvalidOperationException($"Unable to render component {descriptor.Identity}");
         }

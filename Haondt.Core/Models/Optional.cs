@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Haondt.Core.Models
+﻿namespace Haondt.Core.Models
 {
-    public readonly struct Optional<T>
+    public readonly struct Optional<T> where T : notnull
     {
         private readonly T _value;
         private readonly bool _hasValue;

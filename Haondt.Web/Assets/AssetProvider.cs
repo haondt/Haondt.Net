@@ -14,11 +14,12 @@ namespace Haondt.Web.Assets
             foreach (var source in assetSources)
             {
                 var result = await source.GetAssetAsync(assetPath);
-                if (result.IsSuccessful)
-                {
-                    memoryCache.Set(assetPath, result.Value, TimeSpan.FromHours(12));
-                    return result;
-                }
+                if (!result.IsSuccessful)
+                    continue;
+                var (data, cache) = result.Value;
+                if (cache)
+                    memoryCache.Set(assetPath, data, TimeSpan.FromHours(12));
+                return new(data);
             }
 
             return new(WebReason.NotFound);

@@ -5,6 +5,6 @@ namespace Haondt.Web.Assets
 {
     public interface IAssetSource
     {
-        public Task<Result<byte[], WebReason>> GetAssetAsync(string assetPath);
+        public Task<Result<(byte[] Data, bool Cache), WebReason>> GetAssetAsync(string assetPath);
     }
 }

@@ -210,7 +210,7 @@ namespace Haondt.Persistence.Services
                                 var primaryKeyString = StorageKeyConvert.Serialize(addFkOp.Target);
                                 var foreignKeyString = StorageKeyConvert.Serialize(addFkOp.ForeignKey);
                                 if (!data.Values.TryGetValue(primaryKeyString, out var leaf))
-                                    throw new KeyNotFoundException($"Not such key {addFkOp.Target}");
+                                    throw new KeyNotFoundException($"No such key {addFkOp.Target}");
 
                                 leaf.ForeignKeys.UnionWith(new HashSet<string> { foreignKeyString });
                                 data.Values[primaryKeyString] = leaf;
@@ -284,7 +284,7 @@ namespace Haondt.Persistence.Services
                                 var primaryKeyString = StorageKeyConvert.Serialize(addFkOp.Target);
                                 var foreignKeyString = StorageKeyConvert.Serialize(addFkOp.ForeignKey);
                                 if (!data.Values.TryGetValue(primaryKeyString, out var leaf))
-                                    throw new KeyNotFoundException($"Not such key {addFkOp.Target}");
+                                    throw new KeyNotFoundException($"No such key {addFkOp.Target}");
 
                                 leaf.ForeignKeys.UnionWith(new HashSet<string> { foreignKeyString });
                                 data.Values[primaryKeyString] = leaf;

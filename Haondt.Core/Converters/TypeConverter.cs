@@ -8,7 +8,5 @@
                 return casted;
             throw new InvalidCastException($"Cannot coerce object of type {value?.GetType()} to type {typeof(T)}");
         }
-
-
     }
 }
