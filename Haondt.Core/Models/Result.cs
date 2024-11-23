@@ -101,6 +101,22 @@ namespace Haondt.Core.Models
                 return new Result<T, TReason>(_reason);
             throw new ArgumentException($"result was successful, and requires a value to upgrade to {typeof(Result<T, TReason>)}");
         }
+    }
 
+    public readonly struct Result
+    {
+        private readonly bool _fail;
+        public readonly bool IsSuccessful => !_fail;
+        public Result(bool isSuccessful) { _fail = !isSuccessful; }
+
+        public static Result Fail()
+        {
+            return new Result(false);
+        }
+
+        public static Result Succeed()
+        {
+            return new Result(true);
+        }
     }
 }

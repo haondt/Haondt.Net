@@ -9,7 +9,7 @@ namespace Haondt.Web.Controllers
     [Route("_event")]
     public class EventController(IEventPublisher eventPublisher, IHttpContextAccessor httpContext) : BaseController
     {
-        [HttpPost("{eventName}")]
+        [HttpPost("{**eventName}")]
         public async Task<IActionResult> Post(string eventName)
         {
             new HxHeaderBuilder()

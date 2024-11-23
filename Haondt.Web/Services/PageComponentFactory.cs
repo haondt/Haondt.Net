@@ -4,6 +4,7 @@ using System.Web;
 
 namespace Haondt.Web.Services
 {
+
     public class PageComponentFactory(
         IComponentFactory componentFactory,
         ILayoutComponentFactory layoutFactory,

@@ -25,11 +25,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{480E1205-9
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Persistence.MongoDb", "Haondt.Persistence.MongoDb\Haondt.Persistence.MongoDb.csproj", "{C7F7B4BE-1A13-4EDC-B895-88BCF57D4AF5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Persistence.Tests", "Haondt.Persistence.Tests\Haondt.Persistence.Tests.csproj", "{57FCA8F4-9138-4223-88F1-FE4905AF9B92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Persistence.Tests", "Haondt.Persistence.Tests\Haondt.Persistence.Tests.csproj", "{57FCA8F4-9138-4223-88F1-FE4905AF9B92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Persistence.Postgresql", "Haondt.Persistence.Postgresql\Haondt.Persistence.Postgresql.csproj", "{BE47C00F-A5EC-41F6-8A39-D71DCB49AF6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Persistence.Postgresql", "Haondt.Persistence.Postgresql\Haondt.Persistence.Postgresql.csproj", "{BE47C00F-A5EC-41F6-8A39-D71DCB49AF6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Persistence.Sqlite", "Haondt.Persistence.Sqlite\Haondt.Persistence.Sqlite.csproj", "{34CDDAC0-3791-45CC-A073-3E59C838331A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Persistence.Sqlite", "Haondt.Persistence.Sqlite\Haondt.Persistence.Sqlite.csproj", "{34CDDAC0-3791-45CC-A073-3E59C838331A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
