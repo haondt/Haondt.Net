@@ -1,0 +1,10 @@
+﻿@using Haondt.Web.Core.Extensions
+@inherits Haondt.Web.Core.Components.Component
+@typeparam TComponent where TComponent : class, Haondt.Web.Core.Components.IComponent
+
+<DynamicComponent Type="typeof(TComponent)" Parameters="Component.ToDictionary()"/>
+
+@code {
+    [Parameter, EditorRequired]
+    public required TComponent Component { get; set; }
+}

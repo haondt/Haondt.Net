@@ -1,0 +1,48 @@
+@using Haondt.Core.Models
+@using Haondt.Web.Core.Components
+@using Haondt.Web.Core.Extensions
+@inherits Component
+
+@code {
+    public Optional<string> LogoUri { get; set; }
+    public Optional<string> LogoClickUri{ get; set; }
+    public List<NavigationBarEntry> NavigationBarEntries { get; set; } = [];
+    public class NavigationBarEntry
+    {
+        public required string Title { get; set; }
+        public required string Url { get; set; }
+        public Optional<string> PushUrl { get; set; } = new Optional<string>();
+    }
+}
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        @if(LogoClickUri.HasValue)
+        {
+            <a class="navbar-item" href="@LogoClickUri.Value">
+            @if (LogoUri.HasValue)
+            {
+                <img src="@LogoUri.Value" style="height:25px;"/>
+            }
+            </a>
+        }
+        else
+        {
+            @if (LogoUri.HasValue)
+            {
+                <div class="navbar-item">
+                    <img src="@LogoUri.Value" style="height:25px;"/>
+                </div>
+            }
+        }
+         <a role="button" class="navbar-burger" 
+            _="on click toggle .is-active on me"
+            aria-label="menu" aria-expanded="false" 
+            data-target="navbarBasicExample">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+    </div>
+</nav>

@@ -1,0 +1,7 @@
+﻿@using Haondt.Web.Core.Components
+@inherits Component
+<div hx-trigger="load" hx-get="@Target" hx-swap="outerHTML" hx-target="this"></div>
+@code {
+    [Parameter, EditorRequired]
+    public required string Target { get; set; }
+}

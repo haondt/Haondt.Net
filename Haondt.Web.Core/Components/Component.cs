@@ -1,26 +1,16 @@
-﻿using Haondt.Core.Models;
-using Haondt.Web.Core.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Haondt.Web.Core.Http;
+using Microsoft.AspNetCore.Components;
 
 namespace Haondt.Web.Core.Components
 {
-    public class Component : IComponent
+    public abstract class Component : ComponentBase, IComponent
     {
-        public required string ViewPath { get; init; }
-        public required IComponentModel Model { get; init; } 
-        public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; internal init; }
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        [Parameter, CascadingParameter]
+        public IResponseData Response { get; set; }
+        [Parameter, CascadingParameter]
+        public IRequestData Request { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     }
 
-    public class Component<T> : IComponent, IComponent<T> where T : IComponentModel
-    {
-        public required string ViewPath { get; init; }
-        public required T Model { get; init; } 
-        public Optional<Action<IHttpResponseMutator>> ConfigureResponse { get; internal init; }
-        IComponentModel IComponent.Model => Model;
-    }
 }

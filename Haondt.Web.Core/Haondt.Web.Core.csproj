@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Haondt.Core\Haondt.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Exceptions\" />
+  </ItemGroup>
+
 </Project>

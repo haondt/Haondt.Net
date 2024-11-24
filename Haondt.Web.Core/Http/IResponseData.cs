@@ -2,7 +2,7 @@
 {
     public interface IResponseData
     {
-        IHeaderDictionary Headers { get; }
-        int StatusCode { get; set; }
+        IResponseData Status(int statusCode);
+        IResponseData Header(string name, string value);
     }
 }

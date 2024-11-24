@@ -1,5 +1,4 @@
-﻿using Haondt.Web.Core.Exceptions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Haondt.Web.Core.Services
 {
@@ -11,7 +10,6 @@ namespace Haondt.Web.Core.Services
             {
                 BadHttpRequestException => new ObjectResult(exception.Message) { StatusCode = 400 },
                 KeyNotFoundException => new ObjectResult(exception.ToString()) { StatusCode = 404 },
-                MissingComponentException => new ObjectResult(exception.ToString()) { StatusCode = 404 },
                 _ => new ObjectResult(exception.ToString()) { StatusCode = 500 }
             };
             return Task.FromResult<IActionResult>(result);

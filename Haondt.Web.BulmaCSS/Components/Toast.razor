@@ -1,4 +1,14 @@
-﻿@model Haondt.Web.BulmaCSS.Components.ToastModel
+﻿@using Haondt.Core.Models
+@using Haondt.Web.BulmaCSS.Services
+@using Haondt.Web.Core.Components
+@using Haondt.Web.Core.Extensions
+@inherits Component
+
+@code {
+    public ToastSeverity Severity { get; set; }
+    public Optional<string> Title { get; set; }
+    public required string Message { get; set; }
+}
 <div hx-swap-oob="afterbegin:#toast-container">
     <div class="notification toast"
         _="
@@ -14,6 +24,6 @@
             end
             ">
         <button class="delete" _="on click send deleted to the closest <div.toast />"></button>
-        @Model.Message
+        @Message
     </div>
 </div>

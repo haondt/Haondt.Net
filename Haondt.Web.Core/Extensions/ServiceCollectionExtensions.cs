@@ -1,5 +1,4 @@
-﻿using Haondt.Web.Core.Components;
-using Haondt.Web.Core.Services;
+﻿using Haondt.Web.Core.Services;
 
 namespace Haondt.Web.Core.Extensions
 {

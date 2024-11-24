@@ -47,7 +47,6 @@ namespace Haondt.Web.Core.Extensions
             }
             value = default;
             return false;
-
         }
 
         public static T GetValueOrDefault<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key, T defaultValue) where T : notnull

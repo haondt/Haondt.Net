@@ -4,23 +4,25 @@
     {
         private readonly Lazy<IHeaderDictionary> _headersLazy;
         private readonly Action<int> _setStatusCode;
-        private readonly Func<int> _getStatusCode;
 
-        public IHeaderDictionary Headers => _headersLazy.Value;
-
-        public int StatusCode
-        {
-            get => _getStatusCode();
-            set => _setStatusCode(value);
-        }
-
-        public TransientResponseData(Func<IHeaderDictionary> headersFactory,
-            Action<int> setStatusCode,
-            Func<int> getStatusCode)
+        public TransientResponseData(
+            Func<IHeaderDictionary> headersFactory,
+            Action<int> setStatusCode)
         {
             _headersLazy = new Lazy<IHeaderDictionary>(headersFactory);
             _setStatusCode = setStatusCode;
-            _getStatusCode = getStatusCode;
+        }
+
+        public IResponseData Status(int statusCode)
+        {
+            _setStatusCode(statusCode);
+            return this;
+        }
+
+        public IResponseData Header(string name, string value)
+        {
+            _headersLazy.Value[name] = value;
+            return this;
         }
     }
 }

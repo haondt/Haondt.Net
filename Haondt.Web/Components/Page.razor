@@ -1,0 +1,30 @@
+﻿@using Haondt.Web.Core.Components
+@using Haondt.Web.Core.Extensions
+@using IComponent = Haondt.Web.Core.Components.IComponent
+@inherits Component
+
+@code {
+
+    [Parameter]
+    public required IComponent Content { get; set; }
+    [Parameter]
+    public List<string> HeadEntries { get; set; } = [];
+}
+
+<!DOCTYPE html>
+<html lang="en" style="overflow:auto;">
+    <head>
+        <title></title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+        <script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+
+    @foreach(var headEntry in HeadEntries)
+    {
+        <text>@((MarkupString)headEntry)</text>
+    }
+    </head>
+    <body style="display:flex;flex-direction:column;overflow:auto;height:100vh;">
+        <ObjectComponent Component="Content"/>
+    </body>
+</html>
