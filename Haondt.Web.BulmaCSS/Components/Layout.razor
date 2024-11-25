@@ -1,9 +1,10 @@
 ﻿@using Haondt.Web.Core.Components
 @using Haondt.Web.Core.Extensions
-@inherits Component
 
 @code {
-    public required Haondt.Web.Core.Components.IComponent Content { get; set; }
+    [Parameter]
+    public required IComponent Content { get; set; }
+    [Parameter]
     public required NavigationBar NavigationBar { get; set; }
 }
 

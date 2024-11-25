@@ -1,6 +1,5 @@
 ﻿using Haondt.Web.Assets;
 using Haondt.Web.BulmaCSS.Services;
-using Haondt.Web.Components.Services;
 using Haondt.Web.Services;
 
 namespace Haondt.Web.BulmaCSS.Extensions
@@ -25,7 +24,6 @@ namespace Haondt.Web.BulmaCSS.Extensions
 
         public static IServiceCollection AddBulmaCSSComponents(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<NavigationBarSettings>(configuration.GetSection(nameof(NavigationBarSettings)));
             return services;
         }
 

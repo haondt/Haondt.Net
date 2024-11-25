@@ -20,15 +20,17 @@ namespace Haondt.Web.Core.Middleware
             {
                 await _next(context);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var actionResult = await _actionResultFactory.CreateAsync(ex, context);
-                await actionResult.ExecuteResultAsync(new Microsoft.AspNetCore.Mvc.ActionContext
+                var (message, status) = exception switch
                 {
-                    HttpContext = context,
-                    RouteData = context.GetRouteData(),
-                    ActionDescriptor = new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()
-                });
+                    BadHttpRequestException => (exception.Message, 400),
+                    KeyNotFoundException => (exception.ToString(), 404),
+                    _ => (exception.ToString(), 500)
+                };
+                context.Response.StatusCode = status;
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync(message);
             }
         }
     }

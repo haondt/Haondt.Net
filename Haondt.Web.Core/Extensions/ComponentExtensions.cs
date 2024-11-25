@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using System.Collections.Concurrent;
 using System.Reflection;
-using IComponent = Haondt.Web.Core.Components.IComponent;
 
 namespace Haondt.Web.Core.Extensions
 {
@@ -11,6 +10,8 @@ namespace Haondt.Web.Core.Extensions
 
         public static Dictionary<string, object?> ToDictionary<T>(this T component) where T : class, IComponent
         {
+            if (typeof(T) == typeof(IComponent))
+                return ToDictionary(component, component.GetType());
             return ToDictionary(component, typeof(T));
         }
         public static Dictionary<string, object?> ToDictionary(this IComponent component, Type componentType)

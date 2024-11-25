@@ -1,6 +1,5 @@
 ﻿@using Haondt.Web.Core.Extensions
-@inherits Haondt.Web.Core.Components.Component
-@typeparam TComponent where TComponent : class, Haondt.Web.Core.Components.IComponent
+@typeparam TComponent where TComponent : class, IComponent
 
 <DynamicComponent Type="typeof(TComponent)" Parameters="Component.ToDictionary()"/>
 

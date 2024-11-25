@@ -1,6 +1,6 @@
 ﻿using Haondt.Web.BulmaCSS.Components;
-using Haondt.Web.Core.Components;
 using Haondt.Web.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace Haondt.Web.BulmaCSS.Services
 {

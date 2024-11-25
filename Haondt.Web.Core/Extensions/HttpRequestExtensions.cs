@@ -11,6 +11,8 @@ namespace Haondt.Web.Core.Extensions
         public static IRequestData AsRequestData(this HttpRequest request)
         {
             return new TransientRequestData(
+                () => request.Method,
+                () => request.Path.ToString(),
                 () => request.Form,
                 () => request.Query,
                 () => request.Cookies,

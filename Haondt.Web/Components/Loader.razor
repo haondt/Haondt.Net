@@ -1,7 +1,30 @@
-﻿@using Haondt.Web.Core.Components
-@inherits Component
-<div hx-trigger="load" hx-get="@Target" hx-swap="outerHTML" hx-target="this"></div>
+﻿@using Haondt.Core.Models
+@using Haondt.Web.Core.Components
 @code {
     [Parameter, EditorRequired]
+    public required string HxMethod { get; set; }
+    [Parameter, EditorRequired]
     public required string Target { get; set; }
+    [Parameter]
+    public Optional<List<(string Key, string Value)>> Values { get; set; } = new();
+
+    private Dictionary<string, object> _hxAttribute = new();
+
+    protected override void OnInitialized()
+    {
+        _hxAttribute[HxMethod] = Target;
+    }
 }
+
+<form hx-trigger="load"
+    @attributes="_hxAttribute"
+    hx-swap="outerHTML" 
+    hx-target="this">
+    @if (Values.HasValue)
+    {
+        @foreach(var (k, v) in Values.Value)
+        {
+            <input type="hidden" name="@k" value="@v"/>
+        }
+    }
+</form>

@@ -1,5 +1,5 @@
-﻿using Haondt.Web.Core.Components;
-using Haondt.Web.Core.Http;
+﻿using Haondt.Web.Core.Http;
+using Microsoft.AspNetCore.Components;
 
 namespace Haondt.Web.Core.Services
 {
