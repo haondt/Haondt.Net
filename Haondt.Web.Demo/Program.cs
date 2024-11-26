@@ -5,8 +5,8 @@ using Haondt.Web.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-//.AddApplicationPart(typeof(Haondt.Web.Extensions.ServiceCollectionExtensions).Assembly)
+builder.Services.AddControllers()
+.AddApplicationPart(typeof(Haondt.Web.Extensions.ServiceCollectionExtensions).Assembly);
 //.AddApplicationPart(typeof(Haondt.Web.BulmaCSS.Extensions.ServiceCollectionExtensions).Assembly);
 
 builder.Configuration.AddEnvironmentVariables();

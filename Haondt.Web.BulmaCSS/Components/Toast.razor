@@ -4,8 +4,11 @@
 @using Haondt.Web.Core.Extensions
 
 @code {
+    [Parameter]
     public ToastSeverity Severity { get; set; }
+    [Parameter]
     public Optional<string> Title { get; set; }
+    [Parameter, EditorRequired]
     public required string Message { get; set; }
 }
 <div hx-swap-oob="afterbegin:#toast-container">

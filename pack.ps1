@@ -1,15 +1,6 @@
 # Define the list of projects in the Visual Studio solution
 $projects = @(
-    ".\Haondt.Core\Haondt.Core.csproj",
-    ".\Haondt.Persistence\Haondt.Persistence.csproj",
-    ".\Haondt.Persistence.MongoDb\Haondt.Persistence.MongoDb.csproj",
-    ".\Haondt.Persistence.Postgresql\Haondt.Persistence.Postgresql.csproj",
-    ".\Haondt.Persistence.Sqlite\Haondt.Persistence.Sqlite.csproj",
-    ".\Haondt.Identity\Haondt.Identity.csproj",
-    ".\Haondt.Web\Haondt.Web.csproj",
-    ".\Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj",
-    ".\Haondt.Web.Components\Haondt.Web.Components.csproj"
-    ".\Haondt.Web.Core\Haondt.Web.Core.csproj"
+    ".\Haondt.Web.CodeGeneration\Haondt.Web.CodeGeneration.csproj"
 )
 
 $versionSuffix = "alpha-" + (Get-Date -Format "yyyyMMddHHmmss")

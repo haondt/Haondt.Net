@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Haondt.Web.Demo.Controllers
 {
     [Route("/")]
-    public class IndexController : BaseController
+    public class IndexController : UIController
     {
         public IActionResult Get()
         {
