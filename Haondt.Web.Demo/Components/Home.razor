@@ -4,9 +4,9 @@
 
 @code {
     [CascadingParameter]
-    public IResponseData Response { get; set; }
+    public IResponseData Response { get; set; } = default!;
     [CascadingParameter]
-    public IRequestData Request { get; set; }
+    public IRequestData Request { get; set; } = default!;
 
     protected override Task OnInitializedAsync()
     {
