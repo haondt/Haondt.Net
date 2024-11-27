@@ -22,15 +22,22 @@ namespace Haondt.Web.Core.Middleware
             }
             catch (Exception exception)
             {
-                var (message, status) = exception switch
+                try
                 {
-                    BadHttpRequestException => (exception.Message, 400),
-                    KeyNotFoundException => (exception.ToString(), 404),
-                    _ => (exception.ToString(), 500)
-                };
-                context.Response.StatusCode = status;
-                context.Response.ContentType = "text/plain";
-                await context.Response.WriteAsync(message);
+                    var result = await _actionResultFactory.CreateAsync(exception, context);
+                    await result.ExecuteAsync(context);
+                }
+                catch (Exception exception2)
+                {
+                    var message = "Exception occurred:\n\n";
+                    message += exception.ToString();
+                    message += "\n\nWhile handling that exception, another exception occurred:\n\n";
+                    message += exception2.ToString();
+
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "text/plain";
+                    await context.Response.WriteAsync(message);
+                }
             }
         }
     }
