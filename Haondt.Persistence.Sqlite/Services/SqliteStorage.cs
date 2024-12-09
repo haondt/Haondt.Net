@@ -473,6 +473,11 @@ namespace Haondt.Persistence.Sqlite.Services
                                     result.DeletedForeignKeys += deleted;
                                     break;
                                 }
+                            case CustomSqliteStorageOperation customOp:
+                                {
+                                    customOp.Execute(connection, transaction);
+                                    break;
+                                }
                             default:
                                 throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                         }
@@ -550,6 +555,11 @@ namespace Haondt.Persistence.Sqlite.Services
                                     deleteForeignKeyCommand.Value.SetParameters(deleteFkOp.Target);
                                     var deleted = deleteForeignKeyCommand.Value.Command();
                                     result.DeletedForeignKeys += deleted;
+                                    break;
+                                }
+                            case CustomSqliteStorageOperation customOp:
+                                {
+                                    customOp.Execute(connection, transaction);
                                     break;
                                 }
                             default:

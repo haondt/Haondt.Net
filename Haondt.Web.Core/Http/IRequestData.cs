@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
-using System.Collections;
-
-namespace Haondt.Web.Core.Http
+﻿namespace Haondt.Web.Core.Http
 {
     public interface IRequestData
     {
@@ -9,5 +6,7 @@ namespace Haondt.Web.Core.Http
         IQueryCollection Query { get; }
         IRequestCookieCollection Cookies { get; }
         IHeaderDictionary Headers { get; }
+        string Method { get; }
+        string Path { get; }
     }
 }

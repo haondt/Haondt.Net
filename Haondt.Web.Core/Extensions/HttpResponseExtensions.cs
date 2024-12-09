@@ -8,10 +8,7 @@ namespace Haondt.Web.Core.Extensions
         {
             return new TransientResponseData(
                 () => response.Headers,
-                sc => response.StatusCode = sc,
-                () => response.StatusCode);
+                c => response.StatusCode = c);
         }
-
-
     }
 }

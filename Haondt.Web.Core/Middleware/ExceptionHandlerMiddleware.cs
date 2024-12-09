@@ -20,15 +20,24 @@ namespace Haondt.Web.Core.Middleware
             {
                 await _next(context);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                var actionResult = await _actionResultFactory.CreateAsync(ex, context);
-                await actionResult.ExecuteResultAsync(new Microsoft.AspNetCore.Mvc.ActionContext
+                try
                 {
-                    HttpContext = context,
-                    RouteData = context.GetRouteData(),
-                    ActionDescriptor = new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()
-                });
+                    var result = await _actionResultFactory.CreateAsync(exception, context);
+                    await result.ExecuteAsync(context);
+                }
+                catch (Exception exception2)
+                {
+                    var message = "Exception occurred:\n\n";
+                    message += exception.ToString();
+                    message += "\n\nWhile handling that exception, another exception occurred:\n\n";
+                    message += exception2.ToString();
+
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "text/plain";
+                    await context.Response.WriteAsync(message);
+                }
             }
         }
     }

@@ -1,0 +1,18 @@
+﻿@using Haondt.Web.Core.Extensions
+@using Haondt.Web.Core.Http
+@code {
+    [Parameter]
+    public required IComponent Component { get; set; }
+    [Parameter]
+    public required Type Type { get; set; }
+    [Parameter]
+    public required IResponseData Response { get; set; }
+    [Parameter]
+    public required IRequestData Request { get; set; }
+}
+
+<CascadingValue Value="Request">
+    <CascadingValue Value="Response">
+        <DynamicComponent Type="Type" Parameters="Component.ToDictionary(Type)"/>
+    </CascadingValue>
+</CascadingValue>

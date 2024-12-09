@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Haondt.Web.Components\Haondt.Web.Components.csproj" />
     <ProjectReference Include="..\Haondt.Web\Haondt.Web.csproj" />
   </ItemGroup>
 

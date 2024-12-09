@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace Haondt.Web.Core.Services
+﻿namespace Haondt.Web.Core.Services
 {
     public interface IExceptionActionResultFactory
     {
-        public Task<IActionResult> CreateAsync(Exception exception, HttpContext context);
+        public Task<IResult> CreateAsync(Exception exception, HttpContext context);
     }
 }

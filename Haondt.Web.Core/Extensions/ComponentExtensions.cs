@@ -1,33 +1,28 @@
-﻿using Haondt.Web.Core.Components;
-using Haondt.Web.Core.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Components;
+using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace Haondt.Web.Core.Extensions
 {
     public static class ComponentExtensions
     {
-        public static ViewResult CreateView(this IComponent component, Controller controller)
+        private static ConcurrentDictionary<Type, PropertyInfo[]> ParameterCache = new();
+
+        public static Dictionary<string, object?> ToDictionary<T>(this T component) where T : class, IComponent
         {
-            if (component.ConfigureResponse.HasValue)
-            {
-                var mutator = new HttpResponseMutator();
-                component.ConfigureResponse.Value(mutator);
-                mutator.Apply(controller.Response.AsResponseData());
-            }
-
-            return controller.View(component.ViewPath, component.Model);
+            if (typeof(T) == typeof(IComponent))
+                return ToDictionary(component, component.GetType());
+            return ToDictionary(component, typeof(T));
         }
-        public static ViewResult CreateView<T>(this IComponent<T> component, Controller controller) where T : IComponentModel
+        public static Dictionary<string, object?> ToDictionary(this IComponent component, Type componentType)
         {
-            if (component.ConfigureResponse.HasValue)
-            {
-                var mutator = new HttpResponseMutator();
-                component.ConfigureResponse.Value(mutator);
-                mutator.Apply(controller.Response.AsResponseData());
-            }
+            var parameters = ParameterCache.GetOrAdd(componentType,
+                t => t.GetProperties()
+                    .Where(p => p.GetCustomAttribute<ParameterAttribute>() != null)
+                    .ToArray());
 
-            return controller.View(component.ViewPath, component.Model);
+            return parameters
+                .ToDictionary(p => p.Name, p => p.GetValue(component));
         }
-
     }
 }

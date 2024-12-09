@@ -1,0 +1,12 @@
+﻿@using Haondt.Web.Core.Extensions
+@using Haondt.Web.Extensions
+@code {
+    [Parameter]
+    public List<IComponent> Components { get; set; } = [];
+}
+
+@foreach(var component in Components)
+{
+    <ObjectComponent Component="component"/>
+} 
+

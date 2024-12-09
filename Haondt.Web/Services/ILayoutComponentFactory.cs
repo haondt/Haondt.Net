@@ -1,11 +1,10 @@
-﻿
-using Haondt.Web.Core.Components;
+﻿using Microsoft.AspNetCore.Components;
 
 namespace Haondt.Web.Services
 {
     public interface ILayoutComponentFactory
     {
-        public Task<IComponent> GetLayoutAsync(IComponent content, string targetComponentName);
+        public Task<IComponent> GetLayoutAsync(IComponent content);
     }
 
 }

@@ -11,6 +11,8 @@ namespace Haondt.Web.Core.Extensions
         public static IRequestData AsRequestData(this HttpRequest request)
         {
             return new TransientRequestData(
+                () => request.Method,
+                () => request.Path.ToString(),
                 () => request.Form,
                 () => request.Query,
                 () => request.Cookies,
@@ -47,7 +49,6 @@ namespace Haondt.Web.Core.Extensions
             }
             value = default;
             return false;
-
         }
 
         public static T GetValueOrDefault<T>(this IEnumerable<KeyValuePair<string, StringValues>> values, string key, T defaultValue) where T : notnull

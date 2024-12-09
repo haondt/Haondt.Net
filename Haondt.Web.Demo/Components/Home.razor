@@ -1,0 +1,22 @@
+﻿@using Haondt.Web.Core.Components
+@using Haondt.Web.Core.Extensions
+@using Haondt.Web.Core.Http
+
+@code {
+    [CascadingParameter]
+    public IResponseData Response { get; set; } = default!;
+    [CascadingParameter]
+    public IRequestData Request { get; set; } = default!;
+
+    protected override Task OnInitializedAsync()
+    {
+        Response.Status(201);
+        return Task.CompletedTask;
+    }
+}
+
+<h1 class="title">Hello From Home Page!</h1>
+<p class="subtitle">I am now using <strong>Bulma</strong>!</p>
+<button class="button" hx-post="/home/toast" hx-swap="none">Click me!</button>
+
+<title hx-swap-oob="outerHTML;title">Demo Site</title>
