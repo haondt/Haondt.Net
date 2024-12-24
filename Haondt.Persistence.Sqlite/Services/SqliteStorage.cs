@@ -2,6 +2,7 @@
 using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
 using Haondt.Persistence.Converters;
+using Haondt.Persistence.Exceptions;
 using Haondt.Persistence.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -296,6 +297,23 @@ namespace Haondt.Persistence.Sqlite.Services
             }
             );
         }
+        private (Func<int> Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters) GetRemoveForeignKeyCommand(SqliteConnection connection, SqliteTransaction transaction)
+        {
+            var query = $"DELETE FROM {_foreignKeyTableName} WHERE ForeignKey = @foreignKey AND PrimaryKey = @primaryKey";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                ["@foreignKey", "@primaryKey"]);
+
+            return (command.ExecuteNonQuery, command.Dispose, (pk, fk) =>
+            {
+                parameterList[0].Value = StorageKeyConvert.Serialize(fk);
+                parameterList[1].Value = StorageKeyConvert.Serialize(pk);
+            }
+            );
+        }
 
         private (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters) GetDeleteByForeignKeyCommand(SqliteConnection connection, SqliteTransaction transaction)
         {
@@ -379,6 +397,42 @@ namespace Haondt.Persistence.Sqlite.Services
             }
             );
         }
+        private (Action Command, Action Dispose, Action<StorageKey, object> SetParameters) GetAddCommand(SqliteConnection connection, SqliteTransaction transaction)
+        {
+            var columns = "PrimaryKey, Value";
+            var parameters = new List<string>
+            {
+                "@key",
+                "@value"
+            };
+            if (_settings.StoreKeyStrings)
+            {
+                columns += ", KeyString";
+                parameters.Add("@keyString");
+            }
+            var parameterString = string.Join(", ", parameters);
+            var upsertQuery = $@"
+                INSERT INTO {_primaryTableName} ({columns})
+                VALUES ({parameterString})";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                upsertQuery,
+                parameters);
+
+            var parameterDict = parameterList.Zip(parameters)
+                .ToDictionary(t => t.Second, t => t.First);
+
+            return (() => command.ExecuteNonQuery(), command.Dispose, (k, v) =>
+            {
+                parameterDict["@key"].Value = StorageKeyConvert.Serialize(k);
+                parameterDict["@value"].Value = JsonConvert.SerializeObject(v, _serializerSettings);
+                if (_settings.StoreKeyStrings)
+                    parameterDict["@keyString"].Value = k.ToString();
+            }
+            );
+        }
 
         private (Action Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters) GetAddForeignKeyCommand(SqliteConnection connection, SqliteTransaction transaction)
         {
@@ -422,10 +476,12 @@ namespace Haondt.Persistence.Sqlite.Services
             var result = new StorageOperationBatchResult();
 
             (Action Command, Action Dispose, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Action Command, Action Dispose, Action<StorageKey, object> SetParameters)? addCommand = null;
             (Action Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+            (Func<int> Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters)? removeForeignKeyCommand = null;
 
             try
             {
@@ -440,6 +496,23 @@ namespace Haondt.Persistence.Sqlite.Services
                                     upsertCommand ??= GetUpsertCommand(connection, transaction);
                                     upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
                                     upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddOperation addOp:
+                                {
+                                    addCommand ??= GetAddCommand(connection, transaction);
+                                    addCommand.Value.SetParameters(addOp.Target, addOp.Value);
+                                    try
+                                    {
+                                        addCommand.Value.Command();
+                                    }
+                                    catch (SqliteException ex)
+                                    {
+                                        if (ex.Message.Contains("UNIQUE constraint failed")
+                                            && ex.Message.EndsWith(".PrimaryKey'."))
+                                            throw new StorageKeyExistsException(addOp.Target, ex);
+                                        throw;
+                                    }
                                     break;
                                 }
                             case AddForeignKeyOperation addFkOp:
@@ -478,6 +551,13 @@ namespace Haondt.Persistence.Sqlite.Services
                                     customOp.Execute(connection, transaction);
                                     break;
                                 }
+                            case RemoveForeignKeyOperation removeFkOp:
+                                {
+                                    removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
+                                    removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
+                                    var removed = removeForeignKeyCommand.Value.Command();
+                                    break;
+                                }
                             default:
                                 throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                         }
@@ -488,6 +568,8 @@ namespace Haondt.Persistence.Sqlite.Services
             {
                 if (upsertCommand.HasValue)
                     upsertCommand.Value.Dispose();
+                if (addCommand.HasValue)
+                    addCommand.Value.Dispose();
                 if (addForeignKeyCommand.HasValue)
                     addForeignKeyCommand.Value.Dispose();
                 if (deleteCommand.HasValue)
@@ -496,6 +578,8 @@ namespace Haondt.Persistence.Sqlite.Services
                     deleteByForeignKeyCommand.Value.Dispose();
                 if (deleteForeignKeyCommand.HasValue)
                     deleteForeignKeyCommand.Value.Dispose();
+                if (removeForeignKeyCommand.HasValue)
+                    removeForeignKeyCommand.Value.Dispose();
             }
 
             return Task.FromResult(result);
@@ -506,10 +590,12 @@ namespace Haondt.Persistence.Sqlite.Services
             var result = new StorageOperationBatchResult();
 
             (Action Command, Action Dispose, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Action Command, Action Dispose, Action<StorageKey, object> SetParameters)? addCommand = null;
             (Action Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
             (Func<int> Command, Action Dispose, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+            (Func<int> Command, Action Dispose, Action<StorageKey, StorageKey> SetParameters)? removeForeignKeyCommand = null;
 
             try
             {
@@ -524,6 +610,23 @@ namespace Haondt.Persistence.Sqlite.Services
                                     upsertCommand ??= GetUpsertCommand(connection, transaction);
                                     upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
                                     upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddOperation<T> addOp:
+                                {
+                                    addCommand ??= GetAddCommand(connection, transaction);
+                                    addCommand.Value.SetParameters(addOp.Target, addOp.Value);
+                                    try
+                                    {
+                                        addCommand.Value.Command();
+                                    }
+                                    catch (SqliteException ex)
+                                    {
+                                        if (ex.Message.Contains("UNIQUE constraint failed")
+                                            && ex.Message.EndsWith(".PrimaryKey'."))
+                                            throw new StorageKeyExistsException(addOp.Target, ex);
+                                        throw;
+                                    }
                                     break;
                                 }
                             case AddForeignKeyOperation<T> addFkOp:
@@ -562,6 +665,13 @@ namespace Haondt.Persistence.Sqlite.Services
                                     customOp.Execute(connection, transaction);
                                     break;
                                 }
+                            case RemoveForeignKeyOperation removeFkOp:
+                                {
+                                    removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
+                                    removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
+                                    var removed = removeForeignKeyCommand.Value.Command();
+                                    break;
+                                }
                             default:
                                 throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                         }
@@ -572,6 +682,8 @@ namespace Haondt.Persistence.Sqlite.Services
             {
                 if (upsertCommand.HasValue)
                     upsertCommand.Value.Dispose();
+                if (addCommand.HasValue)
+                    addCommand.Value.Dispose();
                 if (addForeignKeyCommand.HasValue)
                     addForeignKeyCommand.Value.Dispose();
                 if (deleteCommand.HasValue)
@@ -580,6 +692,8 @@ namespace Haondt.Persistence.Sqlite.Services
                     deleteByForeignKeyCommand.Value.Dispose();
                 if (deleteForeignKeyCommand.HasValue)
                     deleteForeignKeyCommand.Value.Dispose();
+                if (removeForeignKeyCommand.HasValue)
+                    removeForeignKeyCommand.Value.Dispose();
             }
 
             return Task.FromResult(result);

@@ -1,6 +1,7 @@
 ﻿using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
 using Haondt.Persistence.Converters;
+using Haondt.Persistence.Exceptions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -205,6 +206,18 @@ namespace Haondt.Persistence.Services
                                 };
                                 break;
                             }
+                        case AddOperation addOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(addOp.Target);
+                                if (data.Values.ContainsKey(primaryKeyString))
+                                    throw new StorageKeyExistsException(addOp.Target);
+
+                                data.Values[primaryKeyString] = new DataLeaf
+                                {
+                                    ValueContainer = JObject.FromObject(new ValueContainer { Value = addOp.Value }, _jObjectSerializer),
+                                };
+                                break;
+                            }
                         case AddForeignKeyOperation addFkOp:
                             {
                                 var primaryKeyString = StorageKeyConvert.Serialize(addFkOp.Target);
@@ -244,6 +257,17 @@ namespace Haondt.Persistence.Services
                                         result.DeletedForeignKeys++;
                                 break;
                             }
+                        case RemoveForeignKeyOperation removeFkOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(removeFkOp.Target);
+                                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                {
+                                    var foreignKeyString = StorageKeyConvert.Serialize(removeFkOp.ForeignKey);
+                                    leaf.ForeignKeys.Remove(foreignKeyString);
+                                    data.Values[primaryKeyString] = leaf;
+                                }
+                                break;
+                            }
                         default:
                             throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                     }
@@ -276,6 +300,18 @@ namespace Haondt.Persistence.Services
                                 data.Values[primaryKeyString] = new DataLeaf
                                 {
                                     ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = setOp.Value }, _jObjectSerializer),
+                                };
+                                break;
+                            }
+                        case AddOperation<T> addOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(addOp.Target);
+                                if (data.Values.ContainsKey(primaryKeyString))
+                                    throw new StorageKeyExistsException(addOp.Target);
+
+                                data.Values[primaryKeyString] = new DataLeaf
+                                {
+                                    ValueContainer = JObject.FromObject(new ValueContainer<T> { Value = addOp.Value }, _jObjectSerializer),
                                 };
                                 break;
                             }
@@ -316,6 +352,17 @@ namespace Haondt.Persistence.Services
                                 foreach (var kvp in data.Values)
                                     if (kvp.Value.ForeignKeys.Remove(foreignKeyString))
                                         result.DeletedForeignKeys++;
+                                break;
+                            }
+                        case RemoveForeignKeyOperation<T> removeFkOp:
+                            {
+                                var primaryKeyString = StorageKeyConvert.Serialize(removeFkOp.Target);
+                                if (data.Values.TryGetValue(primaryKeyString, out var leaf))
+                                {
+                                    var foreignKeyString = StorageKeyConvert.Serialize(removeFkOp.ForeignKey);
+                                    leaf.ForeignKeys.Remove(foreignKeyString);
+                                    data.Values[primaryKeyString] = leaf;
+                                }
                                 break;
                             }
                         default:

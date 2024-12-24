@@ -28,8 +28,15 @@ namespace Haondt.Persistence.Services
     {
         public required object Value { get; set; }
     }
-
     public class SetOperation<T> : StorageOperation<T> where T : notnull
+    {
+        public required T Value { get; set; }
+    }
+    public class AddOperation : StorageOperation
+    {
+        public required object Value { get; set; }
+    }
+    public class AddOperation<T> : StorageOperation<T> where T : notnull
     {
         public required T Value { get; set; }
     }
@@ -40,6 +47,15 @@ namespace Haondt.Persistence.Services
     }
 
     public class AddForeignKeyOperation<T> : StorageOperation<T> where T : notnull
+    {
+        public required StorageKey<T> ForeignKey { get; set; }
+    }
+    public class RemoveForeignKeyOperation : StorageOperation
+    {
+        public required StorageKey ForeignKey { get; set; }
+    }
+
+    public class RemoveForeignKeyOperation<T> : StorageOperation<T> where T : notnull
     {
         public required StorageKey<T> ForeignKey { get; set; }
     }

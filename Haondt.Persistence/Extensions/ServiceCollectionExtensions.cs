@@ -8,7 +8,8 @@ namespace Haondt.Persistence.Extensions
     {
         public static IServiceCollection AddMemoryStorage(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<IStorage, MemoryStorage>();
+            services.AddSingleton<MemoryStorage>();
+            services.AddSingleton<IStorage>(sp => new TransientTransactionalBatchStorage(sp.GetRequiredService<MemoryStorage>()));
             return services;
         }
 

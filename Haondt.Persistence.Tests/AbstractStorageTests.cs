@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Haondt.Identity.StorageKey;
+using Haondt.Persistence.Exceptions;
 using Haondt.Persistence.Services;
 
 namespace Haondt.Persistence.Tests
@@ -40,6 +41,64 @@ namespace Haondt.Persistence.Tests
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
             existing.Value.Color.Should().Be("red");
+        }
+
+        [Fact]
+        public async Task WillAddStorageKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var id3 = Guid.NewGuid().ToString();
+            var id4 = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var key3 = StorageKey<Car>.Create(id3);
+            var key4 = StorageKey<Car>.Create(id4);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Add(key, new Car { Color = "red" });
+            await storage.Add(key2, new Car { Color = "blue" }, [foreignKey]);
+            await storage.AddMany([((StorageKey)key3, new Car { Color = "green" })]);
+            await storage.AddMany<Car>([(key4, new Car { Color = "yellow" })]);
+
+            var car = await storage.Get(key);
+            car.IsSuccessful.Should().BeTrue();
+            car.Value.Color.Should().Be("red");
+
+            var car2 = await storage.Get(key2);
+            car2.IsSuccessful.Should().BeTrue();
+            car2.Value.Color.Should().Be("blue");
+
+            var car3 = await storage.Get(key3);
+            car3.IsSuccessful.Should().BeTrue();
+            car3.Value.Color.Should().Be("green");
+
+            var car4 = await storage.Get(key4);
+            car4.IsSuccessful.Should().BeTrue();
+            car4.Value.Color.Should().Be("yellow");
+        }
+
+        [Fact]
+        public async Task WillThrowErrorWhenAddingExistingStorageKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Set(key, new Car { Color = "red" });
+
+            await storage.Invoking(s => s.Add(key, new Car { Color = "blue" }))
+                .Should().ThrowAsync<StorageKeyExistsException>();
+            await storage.Invoking(s => s.Add(key, new Car { Color = "blue" }, [foreignKey]))
+                .Should().ThrowAsync<StorageKeyExistsException>();
+            await storage.Invoking(s => s.AddMany([((StorageKey)key, new Car { Color = "blue" })]))
+                .Should().ThrowAsync<StorageKeyExistsException>();
+            await storage.Invoking(s => s.AddMany<Car>([(key, new Car { Color = "blue" })]))
+                .Should().ThrowAsync<StorageKeyExistsException>();
+
+            var car = await storage.Get(key);
+            car.IsSuccessful.Should().BeTrue();
+            car.Value.Color.Should().Be("red");
         }
 
         [Fact]
@@ -563,6 +622,73 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
+        public async Task WillPerformTransactionalBatchAdd()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            await storage.Set(key2, new Car { Color = "green" });
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new AddOperation
+                {
+                    Target = key,
+                    Value = new Car { Color = "blue" }
+                },
+            });
+
+            var car = await storage.Get(key);
+            var car2 = await storage.Get(key2);
+            car.IsSuccessful.Should().BeTrue();
+            car.Value.Color.Should().BeEquivalentTo("blue");
+            car2.IsSuccessful.Should().BeTrue();
+            car2.Value.Color.Should().BeEquivalentTo("green");
+        }
+
+        [Fact]
+        public async Task WillThrowExceptionOnConflictingTransactionBatchAdd()
+        {
+            var id = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            await storage.Set(key, new Car { Color = "green" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new AddOperation
+                {
+                    Target = key,
+                    Value = new Car { Color = "blue" }
+                },
+            })).Should().ThrowAsync<StorageKeyExistsException>();
+        }
+
+        [Fact]
+        public async Task WillPerformTransactionalBatchRemoveForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Set(key, new Car { Color = "red" }, [foreignKey]);
+            await storage.Set(key2, new Car { Color = "green" }, [foreignKey]);
+            await storage.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new RemoveForeignKeyOperation
+                {
+                    Target = key,
+                    ForeignKey = foreignKey,
+                },
+            });
+
+            var cars = await storage.GetManyByForeignKey(foreignKey);
+            cars.Count.Should().Be(1);
+            cars.Any(c => c.Value.Color == "red").Should().BeFalse();
+            cars.Any(c => c.Value.Color == "green").Should().BeTrue();
+        }
+
+        [Fact]
         public async Task WillRollbackTransactionalBatchAddForeignKey()
         {
             var id = Guid.NewGuid().ToString();
@@ -601,6 +727,71 @@ namespace Haondt.Persistence.Tests
 
             var cars = await storage.GetManyByForeignKey(foreignKey);
             cars.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchRemoveForeignKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var foreignId = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            var foreignKey = StorageKey<Car>.Create(foreignId);
+            await storage.Set(key, new Car { Color = "red" }, [foreignKey]);
+            await storage.Set(key2, new Car { Color = "green" }, [foreignKey]);
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new Car { Color = "blue" }
+                },
+                new RemoveForeignKeyOperation
+                {
+                    Target = key,
+                    ForeignKey = foreignKey,
+                },
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new ErrorCar { Color = "green" }
+                }
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var cars = await storage.GetManyByForeignKey(foreignKey);
+            cars.Count.Should().Be(2);
+            cars.Any(c => c.Value.Color == "red").Should().BeTrue();
+            cars.Any(c => c.Value.Color == "green").Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task WillRollbackTransactionalBatchAddKey()
+        {
+            var id = Guid.NewGuid().ToString();
+            var id2 = Guid.NewGuid().ToString();
+            var key = StorageKey<Car>.Create(id);
+            var key2 = StorageKey<Car>.Create(id2);
+            await storage.Set(key2, new Car { Color = "green" });
+            await storage.Invoking(s => s.PerformTransactionalBatch(new List<StorageOperation>
+            {
+                new AddOperation
+                {
+                    Target = key,
+                    Value = new Car { Color = "blue" }
+                },
+                new SetOperation
+                {
+                    Target = key2,
+                    Value = new ErrorCar { Color = "blue" }
+                },
+            })).Should().ThrowAsync<InvalidOperationException>();
+
+            var car = await storage.Get(key);
+            var car2 = await storage.Get(key2);
+            car.IsSuccessful.Should().BeFalse();
+            car2.IsSuccessful.Should().BeTrue();
+            car2.Value.Color.Should().BeEquivalentTo("green");
         }
 
         [Fact]

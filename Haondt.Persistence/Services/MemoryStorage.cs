@@ -1,6 +1,7 @@
 ﻿using Haondt.Core.Converters;
 using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
+using Haondt.Persistence.Exceptions;
 
 namespace Haondt.Persistence.Services
 {
@@ -10,7 +11,7 @@ namespace Haondt.Persistence.Services
         public HashSet<StorageKey> ForeignKeys { get; set; } = [];
     }
 
-    public class MemoryStorage : IStorage
+    public class MemoryStorage : ITransactionalBatchOnlyStorage
     {
         protected readonly Dictionary<StorageKey, MemoryEntry> _storage = new();
 
@@ -94,6 +95,14 @@ namespace Haondt.Persistence.Services
                                 newStorage[setOp.Target] = new MemoryEntry { Value = setOp.Value };
                             break;
                         }
+                    case AddOperation addOp:
+                        {
+                            if (newStorage.ContainsKey(addOp.Target))
+                                throw new StorageKeyExistsException(addOp.Target);
+                            else
+                                newStorage[addOp.Target] = new MemoryEntry { Value = addOp.Value };
+                            break;
+                        }
                     case AddForeignKeyOperation addFkOp:
                         {
                             if (!newStorage.TryGetValue(addFkOp.Target, out var memoryEntry))
@@ -126,6 +135,15 @@ namespace Haondt.Persistence.Services
                                     result.DeletedForeignKeys++;
                             break;
                         }
+                    case RemoveForeignKeyOperation removeFkOp:
+                        {
+                            if (newStorage.TryGetValue(removeFkOp.Target, out var entry))
+                            {
+                                entry.ForeignKeys.Remove(removeFkOp.ForeignKey);
+                                newStorage[removeFkOp.Target] = entry;
+                            }
+                            break;
+                        }
                     default:
                         throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                 }
@@ -143,7 +161,7 @@ namespace Haondt.Persistence.Services
         {
             var newStorage = _storage.ToDictionary(kvp => kvp.Key, kvp => new MemoryEntry
             {
-                Value = kvp.Value,
+                Value = kvp.Value.Value,
                 ForeignKeys = kvp.Value.ForeignKeys.ToHashSet()
             });
 
@@ -159,6 +177,14 @@ namespace Haondt.Persistence.Services
                                 memoryEntry.Value = setOp.Value;
                             else
                                 newStorage[setOp.Target] = new MemoryEntry { Value = setOp.Value };
+                            break;
+                        }
+                    case AddOperation<T> addOp:
+                        {
+                            if (newStorage.ContainsKey(addOp.Target))
+                                throw new StorageKeyExistsException(addOp.Target);
+                            else
+                                newStorage[addOp.Target] = new MemoryEntry { Value = addOp.Value };
                             break;
                         }
                     case AddForeignKeyOperation<T> addFkOp:
@@ -191,6 +217,15 @@ namespace Haondt.Persistence.Services
                             foreach (var kvp in newStorage)
                                 if (kvp.Value.ForeignKeys.Remove(deleteFkOp.Target))
                                     result.DeletedForeignKeys++;
+                            break;
+                        }
+                    case RemoveForeignKeyOperation<T> removeFkOp:
+                        {
+                            if (newStorage.TryGetValue(removeFkOp.Target, out var entry))
+                            {
+                                entry.ForeignKeys.Remove(removeFkOp.ForeignKey);
+                                newStorage[removeFkOp.Target] = entry;
+                            }
                             break;
                         }
                     default:

@@ -1,6 +1,7 @@
 ﻿using Haondt.Core.Converters;
 using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
+using Haondt.Persistence.Exceptions;
 using Haondt.Persistence.MongoDb.Models;
 using Haondt.Persistence.Services;
 using MongoDB.Driver;
@@ -21,6 +22,80 @@ namespace Haondt.Persistence.MongoDb.Services
             _collection = client.GetDatabase(database)
                 .GetCollection<HaondtMongoDbDocument>(collection);
             _queryableCollection = _collection.AsQueryable();
+        }
+
+        public async Task Add<T>(StorageKey<T> primaryKey, T value) where T : notnull
+        {
+            try
+            {
+
+                await _collection.InsertOneAsync(new HaondtMongoDbDocument
+                {
+                    PrimaryKey = primaryKey,
+                    Value = value
+                });
+            }
+            catch (MongoWriteException ex)
+            {
+                if (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+                    throw new StorageKeyExistsException(primaryKey, ex);
+                throw;
+            }
+        }
+
+        public async Task Add<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) where T : notnull
+        {
+            try
+            {
+                await _collection.InsertOneAsync(new HaondtMongoDbDocument
+                {
+                    PrimaryKey = primaryKey,
+                    Value = value,
+                    ForeignKeys = addForeignKeys.Cast<StorageKey>().ToList()
+                });
+            }
+            catch (MongoWriteException ex)
+            {
+                if (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+                    throw new StorageKeyExistsException(primaryKey, ex);
+                throw;
+            }
+        }
+
+        public async Task AddMany(List<(StorageKey Key, object Value)> values)
+        {
+            try
+            {
+                await _collection.InsertManyAsync(values.Select(v => new HaondtMongoDbDocument
+                {
+                    PrimaryKey = v.Key,
+                    Value = v.Value,
+                }));
+            }
+            catch (MongoBulkWriteException<HaondtMongoDbDocument> ex)
+            {
+                if (ex.WriteErrors.Any(e => e.Category == ServerErrorCategory.DuplicateKey))
+                    throw new StorageKeyExistsException(ex);
+                throw;
+            }
+        }
+
+        public async Task AddMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
+        {
+            try
+            {
+                await _collection.InsertManyAsync(values.Select(v => new HaondtMongoDbDocument
+                {
+                    PrimaryKey = v.Key,
+                    Value = v.Value,
+                }));
+            }
+            catch (MongoBulkWriteException<HaondtMongoDbDocument> ex)
+            {
+                if (ex.WriteErrors.Any(e => e.Category == ServerErrorCategory.DuplicateKey))
+                    throw new StorageKeyExistsException(ex);
+                throw;
+            }
         }
 
         public Task<bool> ContainsKey(StorageKey key)

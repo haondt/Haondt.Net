@@ -2,6 +2,7 @@
 using Haondt.Core.Models;
 using Haondt.Identity.StorageKey;
 using Haondt.Persistence.Converters;
+using Haondt.Persistence.Exceptions;
 using Haondt.Persistence.Services;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -243,6 +244,23 @@ namespace Haondt.Persistence.Postgresql.Services
             }
             );
         }
+        private (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters) GetRemoveForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var query = $"DELETE FROM {_foreignKeyTableName} WHERE ForeignKey = @foreignKey AND PrimaryKey = @primaryKey";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                query,
+                [("@foreignKey", NpgsqlDbType.Text), ("@primaryKey", NpgsqlDbType.Text)]);
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (pk, fk) =>
+            {
+                parameterList[0].Value = StorageKeyConvert.Serialize(fk);
+                parameterList[1].Value = StorageKeyConvert.Serialize(pk);
+            }
+            );
+        }
 
         private (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters) GetDeleteByForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
@@ -324,6 +342,42 @@ namespace Haondt.Persistence.Postgresql.Services
             }
             );
         }
+        private (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters) GetAddCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
+        {
+            var columns = "PrimaryKey, value";
+            var parameters = new List<(string, NpgsqlDbType)>
+            {
+                ("@key", NpgsqlDbType.Text),
+                ("@value", NpgsqlDbType.Jsonb)
+            };
+            if (_settings.StoreKeyStrings)
+            {
+                columns += ", KeyString";
+                parameters.Add(("@keyString", NpgsqlDbType.Text));
+            }
+            var parameterString = string.Join(", ", parameters.Select(p => p.Item2 == NpgsqlDbType.Jsonb ? $"{p.Item1}::jsonb" : p.Item1));
+            var upsertQuery = $@"
+                INSERT INTO {_primaryTableName} ({columns})
+                VALUES ({parameterString})";
+
+            var (command, parameterList) = BuildCommand(
+                connection,
+                transaction,
+                upsertQuery,
+                parameters);
+
+            var parameterDict = parameterList.Zip(parameters, (p, t) => (p, t))
+                .ToDictionary(t => t.t.Item1, t => t.p);
+
+            return (command.ExecuteNonQueryAsync, command.DisposeAsync, (k, v) =>
+            {
+                parameterDict["@key"].Value = StorageKeyConvert.Serialize(k);
+                parameterDict["@value"].Value = JsonConvert.SerializeObject(v, _serializerSettings);
+                if (_settings.StoreKeyStrings)
+                    parameterDict["@keyString"].Value = k.ToString();
+            }
+            );
+        }
 
         private (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters) GetAddForeignKeyCommand(NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
@@ -367,10 +421,12 @@ namespace Haondt.Persistence.Postgresql.Services
             var result = new StorageOperationBatchResult();
 
             (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? addCommand = null;
             (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? removeForeignKeyCommand = null;
 
             try
             {
@@ -385,6 +441,22 @@ namespace Haondt.Persistence.Postgresql.Services
                                     upsertCommand ??= GetUpsertCommand(connection, transaction);
                                     upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
                                     await upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddOperation addOp:
+                                {
+                                    addCommand ??= GetAddCommand(connection, transaction);
+                                    addCommand.Value.SetParameters(addOp.Target, addOp.Value);
+                                    try
+                                    {
+                                        await addCommand.Value.Command();
+                                    }
+                                    catch (NpgsqlException ex)
+                                    {
+                                        if (ex.Message.Contains("duplicate key value violates unique constraint"))
+                                            throw new StorageKeyExistsException(addOp.Target, ex);
+                                        throw;
+                                    }
                                     break;
                                 }
                             case AddForeignKeyOperation addFkOp:
@@ -418,6 +490,13 @@ namespace Haondt.Persistence.Postgresql.Services
                                     result.DeletedForeignKeys += deleted;
                                     break;
                                 }
+                            case RemoveForeignKeyOperation removeFkOp:
+                                {
+                                    removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
+                                    removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
+                                    var removed = await removeForeignKeyCommand.Value.Command();
+                                    break;
+                                }
                             default:
                                 throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                         }
@@ -428,6 +507,8 @@ namespace Haondt.Persistence.Postgresql.Services
             {
                 if (upsertCommand.HasValue)
                     await upsertCommand.Value.DisposeAsync();
+                if (addCommand.HasValue)
+                    await addCommand.Value.DisposeAsync();
                 if (addForeignKeyCommand.HasValue)
                     await addForeignKeyCommand.Value.DisposeAsync();
                 if (deleteCommand.HasValue)
@@ -436,6 +517,8 @@ namespace Haondt.Persistence.Postgresql.Services
                     await deleteByForeignKeyCommand.Value.DisposeAsync();
                 if (deleteForeignKeyCommand.HasValue)
                     await deleteForeignKeyCommand.Value.DisposeAsync();
+                if (removeForeignKeyCommand.HasValue)
+                    await removeForeignKeyCommand.Value.DisposeAsync();
             }
 
             return result;
@@ -446,10 +529,12 @@ namespace Haondt.Persistence.Postgresql.Services
             var result = new StorageOperationBatchResult();
 
             (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? upsertCommand = null;
+            (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, object> SetParameters)? addCommand = null;
             (Func<Task> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? addForeignKeyCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteByForeignKeyCommand = null;
             (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey> SetParameters)? deleteForeignKeyCommand = null;
+            (Func<Task<int>> Command, Func<ValueTask> DisposeAsync, Action<StorageKey, StorageKey> SetParameters)? removeForeignKeyCommand = null;
 
             try
             {
@@ -464,6 +549,22 @@ namespace Haondt.Persistence.Postgresql.Services
                                     upsertCommand ??= GetUpsertCommand(connection, transaction);
                                     upsertCommand.Value.SetParameters(setOp.Target, setOp.Value);
                                     await upsertCommand.Value.Command();
+                                    break;
+                                }
+                            case AddOperation<T> addOp:
+                                {
+                                    addCommand ??= GetAddCommand(connection, transaction);
+                                    addCommand.Value.SetParameters(addOp.Target, addOp.Value);
+                                    try
+                                    {
+                                        await addCommand.Value.Command();
+                                    }
+                                    catch (NpgsqlException ex)
+                                    {
+                                        if (ex.Message.Contains("duplicate key value violates unique constraint"))
+                                            throw new StorageKeyExistsException(addOp.Target, ex);
+                                        throw;
+                                    }
                                     break;
                                 }
                             case AddForeignKeyOperation<T> addFkOp:
@@ -497,6 +598,13 @@ namespace Haondt.Persistence.Postgresql.Services
                                     result.DeletedForeignKeys += deleted;
                                     break;
                                 }
+                            case RemoveForeignKeyOperation<T> removeFkOp:
+                                {
+                                    removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
+                                    removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
+                                    var removed = await removeForeignKeyCommand.Value.Command();
+                                    break;
+                                }
                             default:
                                 throw new ArgumentException($"Unknown storage operation {operation.GetType()}");
                         }
@@ -507,6 +615,8 @@ namespace Haondt.Persistence.Postgresql.Services
             {
                 if (upsertCommand.HasValue)
                     await upsertCommand.Value.DisposeAsync();
+                if (addCommand.HasValue)
+                    await addCommand.Value.DisposeAsync();
                 if (addForeignKeyCommand.HasValue)
                     await addForeignKeyCommand.Value.DisposeAsync();
                 if (deleteCommand.HasValue)
@@ -515,6 +625,8 @@ namespace Haondt.Persistence.Postgresql.Services
                     await deleteByForeignKeyCommand.Value.DisposeAsync();
                 if (deleteForeignKeyCommand.HasValue)
                     await deleteForeignKeyCommand.Value.DisposeAsync();
+                if (removeForeignKeyCommand.HasValue)
+                    await removeForeignKeyCommand.Value.DisposeAsync();
             }
 
             return result;

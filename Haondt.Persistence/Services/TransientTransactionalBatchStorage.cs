@@ -83,5 +83,48 @@ namespace Haondt.Persistence.Services
                     Value = t.Value
                 }).Cast<StorageOperation<T>>().ToList());
 
+        public Task Add<T>(StorageKey<T> primaryKey, T value) where T : notnull
+            => inner.PerformTransactionalBatch(new List<StorageOperation<T>>
+            {
+                new AddOperation<T>
+                {
+                    Target = primaryKey,
+                    Value = value
+                }
+            });
+
+        public Task Add<T>(StorageKey<T> primaryKey, T value, List<StorageKey<T>> addForeignKeys) where T : notnull
+        {
+            List<StorageOperation<T>> operations = new()
+            {
+                new AddOperation<T>{ Target = primaryKey, Value = value },
+            };
+
+            foreach (var fk in addForeignKeys)
+                operations.Add(new AddForeignKeyOperation<T>
+                {
+                    ForeignKey = fk,
+                    Target = primaryKey,
+                });
+
+            return inner.PerformTransactionalBatch(operations);
+        }
+
+        public Task AddMany(List<(StorageKey Key, object Value)> values)
+            => inner.PerformTransactionalBatch(values
+                .Select(t => new AddOperation
+                {
+                    Target = t.Key,
+                    Value = t.Value
+                }).Cast<StorageOperation>().ToList());
+
+        public Task AddMany<T>(List<(StorageKey<T> Key, T Value)> values) where T : notnull
+            => inner.PerformTransactionalBatch(values
+                .Select(t => new AddOperation<T>
+                {
+                    Target = t.Key,
+                    Value = t.Value
+                }).Cast<StorageOperation<T>>().ToList());
+
     }
 }
