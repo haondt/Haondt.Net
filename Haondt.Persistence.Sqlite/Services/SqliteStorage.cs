@@ -555,7 +555,7 @@ namespace Haondt.Persistence.Sqlite.Services
                                 {
                                     removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
                                     removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
-                                    var removed = removeForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += removeForeignKeyCommand.Value.Command();
                                     break;
                                 }
                             default:
@@ -670,6 +670,7 @@ namespace Haondt.Persistence.Sqlite.Services
                                     removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
                                     removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
                                     var removed = removeForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += removed;
                                     break;
                                 }
                             default:

@@ -495,6 +495,7 @@ namespace Haondt.Persistence.Postgresql.Services
                                     removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
                                     removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
                                     var removed = await removeForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += removed;
                                     break;
                                 }
                             default:
@@ -603,6 +604,7 @@ namespace Haondt.Persistence.Postgresql.Services
                                     removeForeignKeyCommand ??= GetRemoveForeignKeyCommand(connection, transaction);
                                     removeForeignKeyCommand.Value.SetParameters(removeFkOp.Target, removeFkOp.ForeignKey);
                                     var removed = await removeForeignKeyCommand.Value.Command();
+                                    result.DeletedForeignKeys += removed;
                                     break;
                                 }
                             default:

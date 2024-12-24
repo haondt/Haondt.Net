@@ -139,8 +139,11 @@ namespace Haondt.Persistence.Services
                         {
                             if (newStorage.TryGetValue(removeFkOp.Target, out var entry))
                             {
-                                entry.ForeignKeys.Remove(removeFkOp.ForeignKey);
-                                newStorage[removeFkOp.Target] = entry;
+                                if (entry.ForeignKeys.Remove(removeFkOp.ForeignKey))
+                                {
+                                    newStorage[removeFkOp.Target] = entry;
+                                    result.DeletedForeignKeys++;
+                                }
                             }
                             break;
                         }
@@ -223,8 +226,11 @@ namespace Haondt.Persistence.Services
                         {
                             if (newStorage.TryGetValue(removeFkOp.Target, out var entry))
                             {
-                                entry.ForeignKeys.Remove(removeFkOp.ForeignKey);
-                                newStorage[removeFkOp.Target] = entry;
+                                if (entry.ForeignKeys.Remove(removeFkOp.ForeignKey))
+                                {
+                                    newStorage[removeFkOp.Target] = entry;
+                                    result.DeletedForeignKeys++;
+                                }
                             }
                             break;
                         }

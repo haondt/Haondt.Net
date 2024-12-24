@@ -263,8 +263,11 @@ namespace Haondt.Persistence.Services
                                 if (data.Values.TryGetValue(primaryKeyString, out var leaf))
                                 {
                                     var foreignKeyString = StorageKeyConvert.Serialize(removeFkOp.ForeignKey);
-                                    leaf.ForeignKeys.Remove(foreignKeyString);
-                                    data.Values[primaryKeyString] = leaf;
+                                    if (leaf.ForeignKeys.Remove(foreignKeyString))
+                                    {
+                                        data.Values[primaryKeyString] = leaf;
+                                        result.DeletedForeignKeys++;
+                                    }
                                 }
                                 break;
                             }
@@ -360,8 +363,11 @@ namespace Haondt.Persistence.Services
                                 if (data.Values.TryGetValue(primaryKeyString, out var leaf))
                                 {
                                     var foreignKeyString = StorageKeyConvert.Serialize(removeFkOp.ForeignKey);
-                                    leaf.ForeignKeys.Remove(foreignKeyString);
-                                    data.Values[primaryKeyString] = leaf;
+                                    if (leaf.ForeignKeys.Remove(foreignKeyString))
+                                    {
+                                        data.Values[primaryKeyString] = leaf;
+                                        result.DeletedForeignKeys++;
+                                    }
                                 }
                                 break;
                             }
