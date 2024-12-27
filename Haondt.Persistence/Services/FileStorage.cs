@@ -167,16 +167,24 @@ namespace Haondt.Persistence.Services
             });
 
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull =>
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
+            int? limit = null, int? offset = null) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
-                return data.Values
+                var result = data.Values
+                    .OrderBy(x => x.Key)
                     .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
                     .Select(kvp => (StorageKeyConvert.Deserialize<T>(kvp.Key),
-                        ExtractContainerValue<T>(kvp.Key, kvp.Value)))
-                    .ToList();
+                        ExtractContainerValue<T>(kvp.Key, kvp.Value)));
+
+                if (offset.HasValue)
+                    result = result.Skip(offset.Value);
+                if (limit.HasValue)
+                    result = result.Take(limit.Value);
+
+                return result.ToList();
             });
 
 

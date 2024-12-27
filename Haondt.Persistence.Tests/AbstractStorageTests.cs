@@ -363,6 +363,38 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
+        public async Task WillPageGetManyByForeignKey()
+        {
+            var carKey1 = StorageKey<Car>.Create("A" + Guid.NewGuid().ToString());
+            var carKey2 = StorageKey<Car>.Create("B" + Guid.NewGuid().ToString());
+            var carKey3 = StorageKey<Car>.Create("C" + Guid.NewGuid().ToString());
+            var carKey4 = StorageKey<Car>.Create("D" + Guid.NewGuid().ToString());
+            var manufacturerKey = StorageKey<Manufacturer>.Create(Guid.NewGuid().ToString()).Extend<Car>();
+
+            await storage.Set(carKey1, new Car { Color = "red" }, [manufacturerKey]);
+            await storage.Set(carKey2, new Car { Color = "blue" }, [manufacturerKey]);
+            await storage.Set(carKey3, new Car { Color = "green" }, [manufacturerKey]);
+            await storage.Set(carKey4, new Car { Color = "yellow" }, [manufacturerKey]);
+
+            var page1Result = await storage.GetManyByForeignKey(manufacturerKey, 1);
+            page1Result.Count.Should().Be(1);
+            var page2Result = await storage.GetManyByForeignKey(manufacturerKey, 2, 1);
+            page2Result.Count.Should().Be(2);
+            var page3Result = await storage.GetManyByForeignKey(manufacturerKey, 1, 3);
+            page3Result.Count.Should().Be(1);
+
+            var result = page1Result.Concat(page2Result).Concat(page3Result)
+                .DistinctBy(q => q.Key)
+                .ToList();
+
+            result.Count.Should().Be(4);
+            result.Should().Contain(q => q.Value.Color == "red");
+            result.Should().Contain(q => q.Value.Color == "blue");
+            result.Should().Contain(q => q.Value.Color == "green");
+            result.Should().Contain(q => q.Value.Color == "yellow");
+        }
+
+        [Fact]
         public async Task WillAppendForeignKeys()
         {
             var carKey = StorageKey<Car>.Create(Guid.NewGuid().ToString());

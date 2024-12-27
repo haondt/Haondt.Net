@@ -43,12 +43,19 @@ namespace Haondt.Persistence.Services
             return Task.FromResult(new Result<T, StorageResultReason>(StorageResultReason.NotFound));
         }
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
+            int? limit = null, int? offset = null) where T : notnull
         {
-            return Task.FromResult(_storage
+            var result = _storage
+                .OrderBy(kvp => kvp.Key)
                 .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
-                .Select(kvp => (kvp.Key.As<T>(), TypeConverter.Coerce<T>(kvp.Value.Value)))
-                .ToList());
+                .Select(kvp => (kvp.Key.As<T>(), TypeConverter.Coerce<T>(kvp.Value.Value)));
+            if (offset.HasValue)
+                result = result.Skip(offset.Value);
+            if (limit.HasValue)
+                result = result.Take(limit.Value);
+
+            return Task.FromResult(result.ToList());
         }
 
 

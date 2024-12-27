@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Haondt.Identity.StorageKey
 {
 
-    public class StorageKey : IEquatable<StorageKey>
+    public class StorageKey : IEquatable<StorageKey>, IComparable<StorageKey>
     {
         public IReadOnlyList<StorageKeyPart> Parts { get; }
         public Type Type => Parts[^1].Type;
@@ -60,6 +60,26 @@ namespace Haondt.Identity.StorageKey
         {
             return $"{nameof(StorageKey)}: {string.Join(',', Parts.Select(p => p.ToString()))}";
         }
+
+        public int CompareTo(StorageKey? other)
+        {
+            if (other is null) return 1; // A non-null instance is always greater than a null one.
+
+            int minLength = Math.Min(Parts.Count, other.Parts.Count);
+
+            for (int i = 0; i < minLength; i++)
+            {
+                int typeComparison = String.Compare(Parts[i].Type.FullName, other.Parts[i].Type.FullName, StringComparison.Ordinal);
+                if (typeComparison != 0) return typeComparison;
+
+                int valueComparison = String.Compare(Parts[i].Value, other.Parts[i].Value, StringComparison.Ordinal);
+                if (valueComparison != 0) return valueComparison;
+            }
+
+            // If all compared parts are equal, the longer list is considered greater.
+            return Parts.Count.CompareTo(other.Parts.Count);
+        }
+
     }
 
     public readonly struct StorageKeyPart(Type type, string value)
@@ -80,7 +100,7 @@ namespace Haondt.Identity.StorageKey
         }
     }
 
-    public class StorageKey<T> : StorageKey, IEquatable<StorageKey<T>> where T : notnull
+    public class StorageKey<T> : StorageKey, IEquatable<StorageKey<T>>, IComparable<StorageKey<T>> where T : notnull
     {
         private StorageKey(IReadOnlyList<StorageKeyPart> parts) : base(parts)
         {
@@ -95,6 +115,25 @@ namespace Haondt.Identity.StorageKey
         public StorageKey<T2> Extend<T2>() where T2 : notnull => new([.. Parts, new(typeof(T2), "")]);
 
         public bool Equals(StorageKey<T>? other) => ((StorageKey)this).Equals(other);
+
+        public int CompareTo(StorageKey<T>? other)
+        {
+            if (other is null) return 1; // A non-null instance is always greater than a null one.
+
+            int minLength = Math.Min(Parts.Count, other.Parts.Count);
+
+            for (int i = 0; i < minLength; i++)
+            {
+                int typeComparison = String.Compare(Parts[i].Type.FullName, other.Parts[i].Type.FullName, StringComparison.Ordinal);
+                if (typeComparison != 0) return typeComparison;
+
+                int valueComparison = String.Compare(Parts[i].Value, other.Parts[i].Value, StringComparison.Ordinal);
+                if (valueComparison != 0) return valueComparison;
+            }
+
+            // If all compared parts are equal, the longer list is considered greater.
+            return Parts.Count.CompareTo(other.Parts.Count);
+        }
     }
 
     public static class StorageKeyPartExtensions

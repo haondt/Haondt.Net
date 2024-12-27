@@ -9,7 +9,7 @@ namespace Haondt.Persistence.Services
         public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> primaryKey) where T : notnull => inner.Get(primaryKey);
         public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) => inner.GetMany(primaryKeys);
         public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull => inner.GetMany(primaryKeys);
-        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull => inner.GetManyByForeignKey(foreignKey);
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey, int? limit = null, int? offset = null) where T : notnull => inner.GetManyByForeignKey(foreignKey, limit, offset);
         public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull => inner.GetForeignKeys<T>(primaryKey);
 
         public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations) => inner.PerformTransactionalBatch(operations);

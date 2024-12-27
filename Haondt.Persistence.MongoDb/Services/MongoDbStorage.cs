@@ -159,10 +159,20 @@ namespace Haondt.Persistence.MongoDb.Services
             }).ToList();
         }
 
-        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
+            int? limit = null, int? offset = null) where T : notnull
         {
-            var result = await _queryableCollection.Where(q => q.ForeignKeys.Any(fk => fk == foreignKey))
+            var query = _queryableCollection.Where(q => q.ForeignKeys.Any(fk => fk == foreignKey));
+
+            if (offset.HasValue)
+                query = query.Skip(offset.Value);
+            if (limit.HasValue)
+                query = query.Take(limit.Value);
+
+            var result = await query
+                .OrderBy(q => q.PrimaryKey)
                 .ToListAsync();
+
             return result
                 .Select(q => (q.PrimaryKey.As<T>(), TypeConverter.Coerce<T>(q.Value)))
                 .ToList();

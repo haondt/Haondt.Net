@@ -138,8 +138,11 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        public async Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
+            int? limit = null, int? offset = null) where T : notnull
         {
+            var limitStr = limit.HasValue ? $"LIMIT {limit.Value}" : string.Empty;
+            var offsetStr = offset.HasValue ? $"OFFSET {offset.Value}" : string.Empty;
             var keyString = StorageKeyConvert.Serialize(foreignKey);
             return await WithConnectionAsync(async connection =>
             {
@@ -147,7 +150,11 @@ namespace Haondt.Persistence.Postgresql.Services
                     SELECT p.PrimaryKey, p.value
                     FROM {_foreignKeyTableName} f
                     JOIN {_primaryTableName} p ON f.PrimaryKey = p.PrimaryKey
-                    WHERE f.ForeignKey = @key";
+                    WHERE f.ForeignKey = @key
+                    ORDER BY PrimaryKey
+                    {limitStr}
+                    {offsetStr}
+                ";
 
                 await using var command = new NpgsqlCommand(query, connection);
                 command.Parameters.AddWithValue("@key", keyString);

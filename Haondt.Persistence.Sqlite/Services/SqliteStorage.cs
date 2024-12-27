@@ -183,8 +183,14 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(longCount > 0);
         }
 
-        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
+            int? limit = null, int? offset = null) where T : notnull
         {
+            var limitStr = limit.HasValue ? $"LIMIT {limit.Value}" : string.Empty;
+            var offsetStr = offset.HasValue ? $"OFFSET {offset.Value}" : string.Empty;
+            var orderByStr = ((limit.HasValue && limit.Value > 0) || (offset.HasValue && offset.Value > 0))
+                ? $"ORDER BY {_primaryTableName}.PrimaryKey"
+                : "";
             var keyString = StorageKeyConvert.Serialize(foreignKey);
             var results = WithConnection(connection =>
             {
@@ -193,6 +199,9 @@ namespace Haondt.Persistence.Sqlite.Services
                     FROM {_foreignKeyTableName}
                     JOIN {_primaryTableName} ON {_foreignKeyTableName}.PrimaryKey = {_primaryTableName}.PrimaryKey
                     WHERE {_foreignKeyTableName}.ForeignKey = @key
+                    {orderByStr}
+                    {limitStr}
+                    {offsetStr}
                 ";
                 using var command = new SqliteCommand(query, connection);
                 command.Parameters.AddWithValue("@key", keyString);
