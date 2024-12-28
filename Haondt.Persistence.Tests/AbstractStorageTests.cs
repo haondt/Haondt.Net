@@ -395,6 +395,25 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
+        public async Task WillCountManyByForeignKey()
+        {
+            var carKey1 = StorageKey<Car>.Create("A" + Guid.NewGuid().ToString());
+            var carKey2 = StorageKey<Car>.Create("B" + Guid.NewGuid().ToString());
+            var carKey3 = StorageKey<Car>.Create("C" + Guid.NewGuid().ToString());
+            var carKey4 = StorageKey<Car>.Create("D" + Guid.NewGuid().ToString());
+            var manufacturerKey = StorageKey<Manufacturer>.Create(Guid.NewGuid().ToString()).Extend<Car>();
+            var manufacturerKey2 = StorageKey<Manufacturer>.Create(Guid.NewGuid().ToString()).Extend<Car>();
+
+            await storage.Set(carKey1, new Car { Color = "red" }, [manufacturerKey]);
+            await storage.Set(carKey2, new Car { Color = "blue" });
+            await storage.Set(carKey3, new Car { Color = "green" }, [manufacturerKey]);
+            await storage.Set(carKey4, new Car { Color = "yellow" }, [manufacturerKey2]);
+
+            var result = await storage.CountManyByForeignKey(manufacturerKey);
+            result.Should().Be(2);
+        }
+
+        [Fact]
         public async Task WillAppendForeignKeys()
         {
             var carKey = StorageKey<Car>.Create(Guid.NewGuid().ToString());

@@ -179,6 +179,27 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
+        public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        {
+            var keyString = StorageKeyConvert.Serialize(foreignKey);
+            return WithConnectionAsync(async connection =>
+            {
+                var query = $@"
+                    SELECT COUNT(1)
+                    FROM {_foreignKeyTableName} f
+                    JOIN {_primaryTableName} p ON f.PrimaryKey = p.PrimaryKey
+                    WHERE f.ForeignKey = @key
+                ";
+
+                await using var command = new NpgsqlCommand(query, connection);
+                command.Parameters.AddWithValue("@key", keyString);
+
+                var results = new List<(StorageKey<T>, T)>();
+                var result = await command.ExecuteScalarAsync();
+                return TypeConverter.Coerce<long>(result ?? 0);
+            });
+        }
+
         public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());

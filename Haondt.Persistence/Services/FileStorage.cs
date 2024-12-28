@@ -187,6 +187,18 @@ namespace Haondt.Persistence.Services
                 return result.ToList();
             });
 
+        public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull =>
+            TryAcquireSemaphoreAnd(async () =>
+            {
+                var data = await GetDataAsync();
+                var foreignKeyString = StorageKeyConvert.Serialize(foreignKey);
+                var result = data.Values
+                    .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKeyString))
+                    .LongCount();
+
+                return result;
+            });
+
 
         public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
             => TryAcquireSemaphoreAnd(async () =>

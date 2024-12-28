@@ -227,6 +227,29 @@ namespace Haondt.Persistence.Sqlite.Services
             return Task.FromResult(results);
         }
 
+        public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        {
+            var keyString = StorageKeyConvert.Serialize(foreignKey);
+            var result = WithConnection(connection =>
+            {
+                var query = $@"
+                    SELECT COUNT(1)
+                    FROM {_foreignKeyTableName} f
+                    JOIN {_primaryTableName} p ON f.PrimaryKey = p.PrimaryKey
+                    WHERE f.ForeignKey = @key
+                ";
+
+                using var command = new SqliteCommand(query, connection);
+                command.Parameters.AddWithValue("@key", keyString);
+
+                var results = new List<(StorageKey<T>, T)>();
+                var result = command.ExecuteScalar();
+                return TypeConverter.Coerce<long>(result ?? 0);
+            });
+
+            return Task.FromResult(result);
+        }
+
         public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());

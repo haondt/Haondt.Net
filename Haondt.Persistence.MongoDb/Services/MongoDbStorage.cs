@@ -178,6 +178,12 @@ namespace Haondt.Persistence.MongoDb.Services
                 .ToList();
         }
 
+        public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        {
+            return _queryableCollection.Where(q => q.ForeignKeys.Any(fk => fk == foreignKey))
+                .LongCountAsync();
+        }
+
         public Task<StorageOperationBatchResult> PerformTransactionalBatch(List<StorageOperation> operations)
         {
             throw new NotImplementedException();

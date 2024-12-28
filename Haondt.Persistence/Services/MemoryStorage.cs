@@ -58,6 +58,14 @@ namespace Haondt.Persistence.Services
             return Task.FromResult(result.ToList());
         }
 
+        public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull
+        {
+            var result = _storage
+                .Where(kvp => kvp.Value.ForeignKeys.Contains(foreignKey))
+                .LongCount();
+
+            return Task.FromResult(result);
+        }
 
         public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
