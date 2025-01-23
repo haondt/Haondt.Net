@@ -10,6 +10,7 @@ namespace Haondt.Web.Core.Extensions
         private const string HX_RETARGET = "HX-Retarget";
         private const string HX_RESELECT = "HX-Reselect";
         private const string HX_LOCATION = "HX-Location";
+        private const string HX_TRIGGER = "HX-Trigger";
 
         /// <summary>
         /// Push a URL into the browser location history.
@@ -33,6 +34,66 @@ namespace Haondt.Web.Core.Extensions
         //}
 
         /// <summary>
+        /// Trigger client side actions on the target element within a response to htmx.
+        /// </summary>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        public static IResponseData HxTrigger(this IResponseData responseData,
+            string @event,
+            string? body = null,
+            string? target = null)
+        {
+            return HxTrigger(responseData, @event, new Dictionary<string, string> { { "value", body ?? "" } }, target);
+        }
+
+        /// <summary>
+        /// Trigger client side actions on the target element within a response to htmx.
+        /// </summary>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static IResponseData HxTrigger(this IResponseData responseData,
+            string @event,
+            Dictionary<string, string> body,
+            string? target = null)
+        {
+            foreach (var key in body.Keys)
+                if ("target".Equals(key, StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException($"Cannot use key {key}, \"target\" is a reserved keyword");
+
+            return responseData.ReplaceHeader(HX_TRIGGER, existing =>
+            {
+                Dictionary<string, Dictionary<string, string>> existingPayload;
+                if (existing.Length > 0 && existing[0] != null)
+                {
+                    try
+                    {
+                        existingPayload = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(existing[0]!)
+                            ?? new();
+                    }
+                    catch
+                    {
+                        existingPayload = new();
+                    }
+                }
+                else
+                    existingPayload = new();
+
+                existingPayload[@event] = body ?? new();
+                if (target != null)
+                    existingPayload[@event]["target"] = target;
+
+                return JsonConvert.SerializeObject(existingPayload);
+            });
+        }
+
+        /// <summary>
         /// Trigger a client side redirection without reloading the whole page.
         /// Instead of changing the page’s location it will act like following a hx-boost link,
         /// creating a new history entry, issuing an ajax request to the value of the header and
@@ -42,6 +103,8 @@ namespace Haondt.Web.Core.Extensions
         /// <param name="path">url to load the response from</param>
         /// <param name="source">the source element of the request</param>
         /// <param name="handler">a callback that wil handle the response HTML</param>
+        /// <param name="values">values to submit with the request</param>
+        /// <param name="headers">headers to submit with the request</param>
         /// <param name="target">the target to swap the response into</param>
         /// <param name="swap">how the repsonse will be swapped in relative to the target</param>
         /// <param name="select">allows you to select the content you want swapped from the response</param>
@@ -52,11 +115,11 @@ namespace Haondt.Web.Core.Extensions
             string? handler = null,
             string? target = null,
             string? swap = null,
-            //???? values = null, // todo: not sure what type this should be
-            //???? headers = null, // todo: not sure what type this should be
+            Dictionary<string, string>? values = null,
+            Dictionary<string, string>? headers = null,
             string? select = null)
         {
-            var payload = new Dictionary<string, string>
+            var payload = new Dictionary<string, object>
             {
                 { "path", path }
             };
@@ -64,6 +127,10 @@ namespace Haondt.Web.Core.Extensions
                 payload["source"] = source;
             if (handler != null)
                 payload["handler"] = handler;
+            if (values != null)
+                payload["values"] = values;
+            if (headers != null)
+                payload["headers"] = headers;
             if (target != null)
                 payload["target"] = target;
             if (target != null)
