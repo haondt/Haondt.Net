@@ -21,7 +21,13 @@
 
         public IResponseData Header(string name, string value)
         {
-            _headersLazy.Value[name] = value;
+            _headersLazy.Value[name] = _headersLazy.Value[name].Append(value).ToArray();
+            return this;
+        }
+
+        public IResponseData ReplaceHeader(string name, Func<string?[], string> newValueFactory)
+        {
+            _headersLazy.Value[name] = newValueFactory(_headersLazy.Value[name].ToArray());
             return this;
         }
     }

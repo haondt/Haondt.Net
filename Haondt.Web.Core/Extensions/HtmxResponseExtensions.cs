@@ -1,4 +1,5 @@
 ﻿using Haondt.Web.Core.Http;
+using Newtonsoft.Json;
 
 namespace Haondt.Web.Core.Extensions
 {
@@ -8,6 +9,7 @@ namespace Haondt.Web.Core.Extensions
         private const string HX_RESWAP = "HX-Reswap";
         private const string HX_RETARGET = "HX-Retarget";
         private const string HX_RESELECT = "HX-Reselect";
+        private const string HX_LOCATION = "HX-Location";
 
         /// <summary>
         /// Push a URL into the browser location history.
@@ -23,11 +25,57 @@ namespace Haondt.Web.Core.Extensions
         {
             return responseData.Header(HX_PUSH_URL, url);
         }
+
         // TODO, idk how I want to solve this since it will be a json dict of events + payloads
         //public static IResponseData HxTriggerAfterSettle(this IResponseData responseData, string @event, object payload)
         //{
         //    return responseData.Header(HX_TRIGGER_AFTER_SETTLE, );
         //}
+
+        /// <summary>
+        /// Trigger a client side redirection without reloading the whole page.
+        /// Instead of changing the page’s location it will act like following a hx-boost link,
+        /// creating a new history entry, issuing an ajax request to the value of the header and
+        /// pushing the path into history.
+        /// </summary>
+        /// <param name="responseData"></param>
+        /// <param name="path">url to load the response from</param>
+        /// <param name="source">the source element of the request</param>
+        /// <param name="handler">a callback that wil handle the response HTML</param>
+        /// <param name="target">the target to swap the response into</param>
+        /// <param name="swap">how the repsonse will be swapped in relative to the target</param>
+        /// <param name="select">allows you to select the content you want swapped from the response</param>
+        /// <returns></returns>
+        public static IResponseData HxLocation(this IResponseData responseData,
+            string path,
+            string? source = null,
+            string? handler = null,
+            string? target = null,
+            string? swap = null,
+            //???? values = null, // todo: not sure what type this should be
+            //???? headers = null, // todo: not sure what type this should be
+            string? select = null)
+        {
+            var payload = new Dictionary<string, string>
+            {
+                { "path", path }
+            };
+            if (source != null)
+                payload["source"] = source;
+            if (handler != null)
+                payload["handler"] = handler;
+            if (target != null)
+                payload["target"] = target;
+            if (target != null)
+                payload["target"] = target;
+            if (swap != null)
+                payload["swap"] = swap;
+            if (select != null)
+                payload["select"] = select;
+
+            return responseData.Header(HX_LOCATION, JsonConvert.SerializeObject(payload));
+        }
+
 
         /// <summary>
         /// Specify how the response will be swapped into the target element.
