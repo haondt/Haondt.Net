@@ -9,6 +9,7 @@ $projects = @(
     ".\Haondt.Web\Haondt.Web.csproj",
     ".\Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj",
     ".\Haondt.Web.Core\Haondt.Web.Core.csproj"
+    ".\Haondt.Json\Haondt.Json.csproj"
 )
 
 $versionSuffix = "alpha-" + (Get-Date -Format "yyyyMMddHHmmss")

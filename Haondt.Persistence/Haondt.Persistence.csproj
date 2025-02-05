@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Haondt.Core\Haondt.Core.csproj" />
     <ProjectReference Include="..\Haondt.Identity\Haondt.Identity.csproj" />
+    <ProjectReference Include="..\Haondt.Json\Haondt.Json.csproj" />
   </ItemGroup>
 
 </Project>

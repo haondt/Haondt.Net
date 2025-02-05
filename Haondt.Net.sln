@@ -34,6 +34,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Core.Tests", "Haondt.Core.Tests\Haondt.Core.Tests.csproj", "{858EF9A4-264D-4B1A-9B9D-3829319EBC1B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Haondt.Json", "Haondt.Json\Haondt.Json.csproj", "{A9DB5840-3A74-49DE-AA04-C1184096B01F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Haondt.Json.Tests", "Haondt.Json.Tests\Haondt.Json.Tests.csproj", "{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +94,18 @@ Global
 		{34CDDAC0-3791-45CC-A073-3E59C838331A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34CDDAC0-3791-45CC-A073-3E59C838331A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34CDDAC0-3791-45CC-A073-3E59C838331A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{858EF9A4-264D-4B1A-9B9D-3829319EBC1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{858EF9A4-264D-4B1A-9B9D-3829319EBC1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{858EF9A4-264D-4B1A-9B9D-3829319EBC1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{858EF9A4-264D-4B1A-9B9D-3829319EBC1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9DB5840-3A74-49DE-AA04-C1184096B01F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9DB5840-3A74-49DE-AA04-C1184096B01F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9DB5840-3A74-49DE-AA04-C1184096B01F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9DB5840-3A74-49DE-AA04-C1184096B01F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,6 +113,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{3207ABA6-9ABE-4714-B48E-1BD61B737971} = {480E1205-91EE-4CF3-9448-A9311A330882}
 		{57FCA8F4-9138-4223-88F1-FE4905AF9B92} = {480E1205-91EE-4CF3-9448-A9311A330882}
+		{858EF9A4-264D-4B1A-9B9D-3829319EBC1B} = {480E1205-91EE-4CF3-9448-A9311A330882}
+		{4C7A741A-B28C-4ED8-A2CA-744A0FD9A478} = {480E1205-91EE-4CF3-9448-A9311A330882}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8FA55469-8DD9-473E-BBA7-2E42987146F2}

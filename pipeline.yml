@@ -4,6 +4,7 @@ tasks:
       - source: push
     packages:
       - csproj: ./Haondt.Core/Haondt.Core.csproj
+      - csproj: ./Haondt.Json/Haondt.Json.csproj
       - csproj: ./Haondt.Identity/Haondt.Identity.csproj
       - csproj: ./Haondt.Persistence/Haondt.Persistence.csproj
       - csproj: ./Haondt.Web.BulmaCSS/Haondt.Web.BulmaCSS.csproj

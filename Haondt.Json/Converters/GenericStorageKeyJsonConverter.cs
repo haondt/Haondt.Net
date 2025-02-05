@@ -1,7 +1,7 @@
 ﻿using Haondt.Identity.StorageKey;
 using Newtonsoft.Json;
 
-namespace Haondt.Persistence.Converters
+namespace Haondt.Json.Converters
 {
     public class GenericStorageKeyJsonConverter : JsonConverter
     {
