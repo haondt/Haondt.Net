@@ -1,12 +1,12 @@
 ﻿@using Haondt.Web.Core.Components
 @using Haondt.Web.Core.Extensions
+@using Haondt.Web.Services
+@inject IEnumerable<IHeadEntryDescriptor> HeadEntries
 
 @code {
 
     [Parameter]
     public required IComponent Content { get; set; }
-    [Parameter]
-    public List<string> HeadEntries { get; set; } = [];
 }
 
 <!DOCTYPE html>
@@ -18,7 +18,7 @@
 
     @foreach(var headEntry in HeadEntries)
     {
-        <text>@((MarkupString)headEntry)</text>
+        <text>@((MarkupString)headEntry.Render())</text>
     }
     </head>
     <body style="display:flex;flex-direction:column;overflow:auto;height:100vh;">

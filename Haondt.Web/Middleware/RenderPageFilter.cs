@@ -10,8 +10,7 @@ namespace Haondt.Web.Middleware
 {
     public class RenderPageFilter(
         IComponentFactory componentFactory,
-        ILayoutComponentFactory layoutFactory,
-        IEnumerable<IHeadEntryDescriptor> headEntries) : IAsyncActionFilter
+        ILayoutComponentFactory layoutFactory) : IAsyncActionFilter
     {
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
@@ -27,7 +26,6 @@ namespace Haondt.Web.Middleware
             var page = new Page
             {
                 Content = layout,
-                HeadEntries = headEntries.Select(e => e.Render()).ToList()
             };
 
             IResult component = await componentFactory.RenderComponentAsync(page);
