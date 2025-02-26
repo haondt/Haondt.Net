@@ -1,7 +1,6 @@
 ﻿using Haondt.Core.Models;
 using Haondt.Web.Assets;
 using Haondt.Web.Core.Reasons;
-using Haondt.Web.Extensions;
 using Microsoft.AspNetCore.StaticFiles;
 
 namespace Haondt.Web.Services
@@ -13,7 +12,7 @@ namespace Haondt.Web.Services
             { "._hs", "text/hyperscript" }
         };
 
-        public async Task<Result<(byte[] Content, string ContentType), WebReason>> HandleAsync(string assetPath)
+        public async Task<DetailedResult<(byte[] Content, string ContentType), WebReason>> HandleAsync(string assetPath)
         {
             if (assetPath.Contains('/') || assetPath.Contains('\\'))
                 return new(WebReason.NotFound);

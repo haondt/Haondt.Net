@@ -10,7 +10,7 @@ namespace Haondt.Web.Assets
         private readonly Assembly _assembly = assembly;
         public bool Cache { get; set; } = true;
 
-        public async Task<Result<(byte[] Data, bool Cache), WebReason>> GetAssetAsync(string assetPath)
+        public async Task<DetailedResult<(byte[] Data, bool Cache), WebReason>> GetAssetAsync(string assetPath)
         {
             if (!_paths.Value.Contains(assetPath))
                 return new(WebReason.NotFound);

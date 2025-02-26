@@ -5,6 +5,6 @@ namespace Haondt.Web.Services
 {
     public interface IAssetHandler
     {
-        Task<Result<(byte[] Content, string ContentType), WebReason>> HandleAsync(string assetPath);
+        Task<DetailedResult<(byte[] Content, string ContentType), WebReason>> HandleAsync(string assetPath);
     }
 }

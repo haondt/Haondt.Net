@@ -6,7 +6,7 @@ namespace Haondt.Web.Assets
 {
     public class AssetProvider(IEnumerable<IAssetSource> assetSources, IMemoryCache memoryCache) : IAssetProvider
     {
-        public async Task<Result<byte[], WebReason>> GetAssetAsync(string assetPath)
+        public async Task<DetailedResult<byte[], WebReason>> GetAssetAsync(string assetPath)
         {
             if (memoryCache.TryGetValue<byte[]>(assetPath, out var cachedAsset))
                 return new(cachedAsset!);
