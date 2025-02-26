@@ -6,9 +6,9 @@ namespace Haondt.Persistence.Services
     public class TransientTransactionalBatchStorage(ITransactionalBatchOnlyStorage inner) : IStorage
     {
         public Task<bool> ContainsKey(StorageKey primaryKey) => inner.ContainsKey(primaryKey);
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> primaryKey) where T : notnull => inner.Get(primaryKey);
-        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) => inner.GetMany(primaryKeys);
-        public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull => inner.GetMany(primaryKeys);
+        public Task<DetailedResult<T, StorageResultReason>> Get<T>(StorageKey<T> primaryKey) where T : notnull => inner.Get(primaryKey);
+        public Task<List<DetailedResult<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) => inner.GetMany(primaryKeys);
+        public Task<List<DetailedResult<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull => inner.GetMany(primaryKeys);
         public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey, int? limit = null, int? offset = null) where T : notnull => inner.GetManyByForeignKey(foreignKey, limit, offset);
         public Task<long> CountManyByForeignKey<T>(StorageKey<T> foreignKey) where T : notnull => inner.CountManyByForeignKey(foreignKey);
         public Task<List<StorageKey<T>>> GetForeignKeys<T>(StorageKey<T> primaryKey) where T : notnull => inner.GetForeignKeys<T>(primaryKey);

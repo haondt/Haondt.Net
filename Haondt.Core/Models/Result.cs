@@ -2,121 +2,54 @@
 
 namespace Haondt.Core.Models
 {
-    public readonly struct Result<T, TReason>
+    public readonly record struct Result<T>
     {
-        private readonly bool _fail;
         private readonly T _value;
-        private readonly TReason _reason;
+        private readonly bool _success;
 
-        public Result(T value) { _value = value; _fail = false; _reason = default!; }
-        public Result() { _value = default!; _fail = false; _reason = default!; }
-        public Result(TReason reason) { _value = default!; _fail = true; _reason = reason; }
+        [MemberNotNullWhen(true, nameof(Value))]
+        public readonly bool IsSuccessful => _success;
+        public Result(T value) { _value = value; _success = true; }
+        public Result() { _value = default!; _success = false; }
 
-        public static Result<T, TReason> Fail(TReason reason)
+        public static Result<T> Success(T value)
         {
-            return new Result<T, TReason>(reason);
+            return new Result<T>(value);
         }
 
-        public static Result<T, TReason> Succeed(T value)
-        {
-            return new Result<T, TReason>(value);
-        }
+        public static Result<T> Failure { get; } = new Result<T>();
 
-        [MemberNotNullWhen(false, nameof(Reason))]
-        public bool IsSuccessful => !_fail;
-
-        public readonly T Value
+        public T? Value
         {
             get
             {
-                if (_fail)
-                    throw new InvalidOperationException("Result was not successful");
-                return _value;
+                if (_success)
+                    return _value;
+                throw new InvalidOperationException("Result was not successful");
             }
         }
 
-        public readonly TReason? Reason
+        public static implicit operator Result<T>(T value)
         {
-            get
-            {
-                if (_fail)
-                    return _reason;
-                throw new InvalidOperationException("Result was successful");
-            }
+            return new(value);
         }
 
-        public static implicit operator Result<TReason>(Result<T, TReason> result)
-        {
-            if (result.IsSuccessful)
-                return new Result<TReason>();
-            return new Result<TReason>(result.Reason);
-        }
+        public static implicit operator Result(Result<T> result) => result.IsSuccessful ? Result.Success : Result.Failure;
 
-        public Result<TReason> WithoutValue()
+        public bool TryGetValue([NotNullWhen(true)] out T? value)
         {
-            return this;
+            value = _value;
+            return _success;
         }
     }
 
-    public readonly struct Result<TReason>
+    public readonly record struct Result
     {
-        private readonly bool _fail;
-        private readonly TReason _reason;
+        private readonly bool _success;
+        public readonly bool IsSuccessful => _success;
+        public Result(bool isSuccessful) { _success = !isSuccessful; }
 
-        [MemberNotNullWhen(false, nameof(Reason))]
-        public readonly bool IsSuccessful => !_fail;
-        public Result(TReason reason) { _reason = reason; _fail = true; }
-        public Result() { _reason = default!; _fail = false; }
-
-        public static Result<TReason> Fail(TReason reason)
-        {
-            return new Result<TReason>(reason);
-        }
-
-        public static Result<TReason> Succeed()
-        {
-            return new Result<TReason>();
-        }
-
-        public readonly TReason? Reason
-        {
-            get
-            {
-                if (_fail)
-                    return _reason;
-                throw new InvalidOperationException("Result was successful");
-            }
-        }
-
-        public Result<T, TReason> WithValue<T>(T value)
-        {
-            if (!_fail)
-                return new Result<T, TReason>(_reason);
-            return new Result<T, TReason>(value);
-        }
-
-        public Result<T, TReason> WithValue<T>()
-        {
-            if (!_fail)
-                return new Result<T, TReason>(_reason);
-            throw new ArgumentException($"result was successful, and requires a value to upgrade to {typeof(Result<T, TReason>)}");
-        }
-    }
-
-    public readonly struct Result
-    {
-        private readonly bool _fail;
-        public readonly bool IsSuccessful => !_fail;
-        public Result(bool isSuccessful) { _fail = !isSuccessful; }
-
-        public static Result Fail()
-        {
-            return new Result(false);
-        }
-
-        public static Result Succeed()
-        {
-            return new Result(true);
-        }
+        public static Result Failure { get; } = new Result(false);
+        public static Result Success { get; } = new Result(true);
     }
 }

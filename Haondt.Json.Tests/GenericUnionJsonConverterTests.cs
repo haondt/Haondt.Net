@@ -63,7 +63,7 @@ namespace Haondt.Json.Tests
         public void WillDeserializeNullNullableUnion()
         {
             var serialized = JsonConvert.DeserializeObject<Union<string, int>?>("null", _serializerSettings);
-            serialized.HasValue.Should().BeFalse();
+            serialized.Should().BeNull();
         }
 
         [Fact]
@@ -77,7 +77,8 @@ namespace Haondt.Json.Tests
         public void WillDeserializeNullableUnion()
         {
             var serialized = JsonConvert.DeserializeObject<Union<string, int>?>(_json2, _serializerSettings);
-            serialized.Value.Unwrap().Should().Be(_union2.Unwrap());
+            serialized.Should().NotBeNull();
+            serialized!.Unwrap().Should().Be(_union2.Unwrap());
         }
     }
 }

@@ -137,32 +137,32 @@ namespace Haondt.Persistence.Services
             return genericParameter.GetValue(container)!;
         }
 
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull =>
+        public Task<DetailedResult<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 var stringKey = StorageKeyConvert.Serialize(key);
                 if (!data.Values.TryGetValue(stringKey, out var value))
                     return new(StorageResultReason.NotFound);
-                return new Result<T, StorageResultReason>(ExtractContainerValue<T>(key, value));
+                return new DetailedResult<T, StorageResultReason>(ExtractContainerValue<T>(key, value));
             });
 
 
-        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
+        public Task<List<DetailedResult<object, StorageResultReason>>> GetMany(List<StorageKey> primaryKeys) =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf)
-                ? new Result<object, StorageResultReason>(ExtractContainerValue(k, leaf))
+                ? new DetailedResult<object, StorageResultReason>(ExtractContainerValue(k, leaf))
                 : new(StorageResultReason.NotFound)).ToList();
             });
 
-        public Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull =>
+        public Task<List<DetailedResult<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> primaryKeys) where T : notnull =>
             TryAcquireSemaphoreAnd(async () =>
             {
                 var data = await GetDataAsync();
                 return primaryKeys.Select(k => data.Values.TryGetValue(StorageKeyConvert.Serialize(k), out var leaf)
-                ? new Result<T, StorageResultReason>(ExtractContainerValue<T>(k, leaf))
+                ? new DetailedResult<T, StorageResultReason>(ExtractContainerValue<T>(k, leaf))
                 : new(StorageResultReason.NotFound)).ToList();
             });
 

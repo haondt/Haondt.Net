@@ -16,8 +16,9 @@ for(int i = 2; i <= 6; i++)
 {
         types.Add($"T{i}");
         var genericsString = string.Join(", ", types);
+        var toStringString = $"Union<{string.Join(", ", types.Select(t => $"{{typeof({t}).Name}}"))}>({{_type.Name}}: {{_value}})";
 #>
-    public readonly record struct Union<<#Write(genericsString);#>>
+    public sealed record Union<<#Write(genericsString);#>>
 <# 
 foreach(var type in types)
 {
@@ -90,6 +91,8 @@ foreach(var type in types)
 <# 
 }
 #>
+
+        public override string ToString() => $"<# Write(toStringString); #>";
     }
 <#
 } 

@@ -36,11 +36,11 @@ namespace Haondt.Persistence.Services
         }
 
 
-        public Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
+        public Task<DetailedResult<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
         {
             if (_storage.TryGetValue(key, out var value))
-                return Task.FromResult(new Result<T, StorageResultReason>(TypeConverter.Coerce<T>(value.Value)));
-            return Task.FromResult(new Result<T, StorageResultReason>(StorageResultReason.NotFound));
+                return Task.FromResult(new DetailedResult<T, StorageResultReason>(TypeConverter.Coerce<T>(value.Value)));
+            return Task.FromResult(new DetailedResult<T, StorageResultReason>(StorageResultReason.NotFound));
         }
 
         public Task<List<(StorageKey<T> Key, T Value)>> GetManyByForeignKey<T>(StorageKey<T> foreignKey,
@@ -67,24 +67,24 @@ namespace Haondt.Persistence.Services
             return Task.FromResult(result);
         }
 
-        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
+        public async Task<List<DetailedResult<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());
             return results.Select(r =>
             {
                 if (r.IsSuccessful)
                     return new(TypeConverter.Coerce<T>(r.Value));
-                return new Result<T, StorageResultReason>(r.Reason);
+                return new DetailedResult<T, StorageResultReason>(r.Reason);
             }).ToList();
         }
 
-        public Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
+        public Task<List<DetailedResult<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             return Task.FromResult(keys.Select(k =>
             {
                 if (_storage.TryGetValue(k, out var value))
                     return new(value.Value);
-                return new Result<object, StorageResultReason>(StorageResultReason.NotFound);
+                return new DetailedResult<object, StorageResultReason>(StorageResultReason.NotFound);
             }).ToList());
         }
 

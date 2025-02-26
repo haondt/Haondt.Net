@@ -2,7 +2,7 @@
 
 namespace Haondt.Core.Models
 {
-    public readonly record struct Union<T1, T2>
+    public sealed record Union<T1, T2>
         where T1 : notnull 
         where T2 : notnull 
     {
@@ -55,8 +55,10 @@ namespace Haondt.Core.Models
 
         public static explicit operator T1(Union<T1, T2> union) => union.Cast<T1>();
         public static explicit operator T2(Union<T1, T2> union) => union.Cast<T2>();
+
+        public override string ToString() => $"Union<{typeof(T1).Name}, {typeof(T2).Name}>({_type.Name}: {_value})";
     }
-    public readonly record struct Union<T1, T2, T3>
+    public sealed record Union<T1, T2, T3>
         where T1 : notnull 
         where T2 : notnull 
         where T3 : notnull 
@@ -117,8 +119,10 @@ namespace Haondt.Core.Models
         public static explicit operator T1(Union<T1, T2, T3> union) => union.Cast<T1>();
         public static explicit operator T2(Union<T1, T2, T3> union) => union.Cast<T2>();
         public static explicit operator T3(Union<T1, T2, T3> union) => union.Cast<T3>();
+
+        public override string ToString() => $"Union<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}>({_type.Name}: {_value})";
     }
-    public readonly record struct Union<T1, T2, T3, T4>
+    public sealed record Union<T1, T2, T3, T4>
         where T1 : notnull 
         where T2 : notnull 
         where T3 : notnull 
@@ -187,8 +191,10 @@ namespace Haondt.Core.Models
         public static explicit operator T2(Union<T1, T2, T3, T4> union) => union.Cast<T2>();
         public static explicit operator T3(Union<T1, T2, T3, T4> union) => union.Cast<T3>();
         public static explicit operator T4(Union<T1, T2, T3, T4> union) => union.Cast<T4>();
+
+        public override string ToString() => $"Union<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}, {typeof(T4).Name}>({_type.Name}: {_value})";
     }
-    public readonly record struct Union<T1, T2, T3, T4, T5>
+    public sealed record Union<T1, T2, T3, T4, T5>
         where T1 : notnull 
         where T2 : notnull 
         where T3 : notnull 
@@ -265,8 +271,10 @@ namespace Haondt.Core.Models
         public static explicit operator T3(Union<T1, T2, T3, T4, T5> union) => union.Cast<T3>();
         public static explicit operator T4(Union<T1, T2, T3, T4, T5> union) => union.Cast<T4>();
         public static explicit operator T5(Union<T1, T2, T3, T4, T5> union) => union.Cast<T5>();
+
+        public override string ToString() => $"Union<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}, {typeof(T4).Name}, {typeof(T5).Name}>({_type.Name}: {_value})";
     }
-    public readonly record struct Union<T1, T2, T3, T4, T5, T6>
+    public sealed record Union<T1, T2, T3, T4, T5, T6>
         where T1 : notnull 
         where T2 : notnull 
         where T3 : notnull 
@@ -351,5 +359,7 @@ namespace Haondt.Core.Models
         public static explicit operator T4(Union<T1, T2, T3, T4, T5, T6> union) => union.Cast<T4>();
         public static explicit operator T5(Union<T1, T2, T3, T4, T5, T6> union) => union.Cast<T5>();
         public static explicit operator T6(Union<T1, T2, T3, T4, T5, T6> union) => union.Cast<T6>();
+
+        public override string ToString() => $"Union<{typeof(T1).Name}, {typeof(T2).Name}, {typeof(T3).Name}, {typeof(T4).Name}, {typeof(T5).Name}, {typeof(T6).Name}>({_type.Name}: {_value})";
     }
 }

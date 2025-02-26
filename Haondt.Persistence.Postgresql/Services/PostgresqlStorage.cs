@@ -104,7 +104,7 @@ namespace Haondt.Persistence.Postgresql.Services
             }
         }
 
-        public async Task<Result<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
+        public async Task<DetailedResult<T, StorageResultReason>> Get<T>(StorageKey<T> key) where T : notnull
         {
             var keyString = StorageKeyConvert.Serialize(key);
             var result = await WithConnectionAsync(async connection =>
@@ -116,11 +116,11 @@ namespace Haondt.Persistence.Postgresql.Services
             });
 
             if (result == null)
-                return new Result<T, StorageResultReason>(StorageResultReason.NotFound);
+                return new DetailedResult<T, StorageResultReason>(StorageResultReason.NotFound);
 
             var value = JsonConvert.DeserializeObject<T>(result.ToString()!, _serializerSettings)
                 ?? throw new JsonException("Unable to deserialize result");
-            return new Result<T, StorageResultReason>(value);
+            return new DetailedResult<T, StorageResultReason>(value);
         }
 
         public async Task<bool> ContainsKey(StorageKey key)
@@ -200,18 +200,18 @@ namespace Haondt.Persistence.Postgresql.Services
             });
         }
 
-        public async Task<List<Result<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
+        public async Task<List<DetailedResult<T, StorageResultReason>>> GetMany<T>(List<StorageKey<T>> keys) where T : notnull
         {
             var results = await GetMany(keys.Cast<StorageKey>().ToList());
             return results.Select(r =>
             {
                 if (r.IsSuccessful)
-                    return new Result<T, StorageResultReason>(TypeConverter.Coerce<T>(r.Value));
-                return new Result<T, StorageResultReason>(r.Reason);
+                    return new DetailedResult<T, StorageResultReason>(TypeConverter.Coerce<T>(r.Value));
+                return new DetailedResult<T, StorageResultReason>(r.Reason);
             }).ToList();
         }
 
-        public async Task<List<Result<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
+        public async Task<List<DetailedResult<object, StorageResultReason>>> GetMany(List<StorageKey> keys)
         {
             return await WithConnectionAsync(async connection =>
             {
@@ -232,11 +232,11 @@ namespace Haondt.Persistence.Postgresql.Services
                 {
                     var keyString = StorageKeyConvert.Serialize(key);
                     if (!keyResults.TryGetValue(keyString, out var valueJson))
-                        return new Result<object, StorageResultReason>(StorageResultReason.NotFound);
+                        return new DetailedResult<object, StorageResultReason>(StorageResultReason.NotFound);
 
                     var value = JsonConvert.DeserializeObject(valueJson, key.Type, _serializerSettings)
                         ?? throw new JsonException("Unable to deserialize result");
-                    return new Result<object, StorageResultReason>(value);
+                    return new DetailedResult<object, StorageResultReason>(value);
                 }).ToList();
             });
         }

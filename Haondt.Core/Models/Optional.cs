@@ -1,4 +1,6 @@
-﻿namespace Haondt.Core.Models
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Haondt.Core.Models
 {
     public readonly struct Optional<T> where T : notnull
     {
@@ -22,9 +24,10 @@
             _hasValue = false;
         }
 
+        [MemberNotNullWhen(true, nameof(Value))]
         public bool HasValue => _hasValue;
 
-        public T Value
+        public T? Value
         {
             get
             {
@@ -35,5 +38,10 @@
 
         }
 
+        public bool TryGetValue([NotNullWhen(true)] out T? value)
+        {
+            value = _value;
+            return _hasValue;
+        }
     }
 }
