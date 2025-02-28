@@ -117,7 +117,7 @@ namespace Haondt.Identity.StorageKey
                 TypeNameStrategy.Name => storageKeyPartType.Name,
                 TypeNameStrategy.FullName => storageKeyPartType.FullName
                     ?? throw new InvalidOperationException($"Unable to retrieve {nameof(storageKeyPartType.FullName)}"),
-                TypeNameStrategy.LookupTable => settings!.LookupTable.Value.GetByKey(storageKeyPartType),
+                TypeNameStrategy.LookupTable => settings!.LookupTable.Value!.GetByKey(storageKeyPartType),
                 TypeNameStrategy.SimpleTypeConverter => SimpleTypeConverter.TypeToString(storageKeyPartType),
                 _ => throw new InvalidOperationException($"Unknown {nameof(TypeNameStrategy)}: {settings?.TypeNameStrategy}")
             };
