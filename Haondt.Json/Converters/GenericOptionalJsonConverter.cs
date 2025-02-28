@@ -26,11 +26,12 @@ namespace Haondt.Json.Converters
                 return null;
             try
             {
-
                 var surrogate = serializer.Deserialize<OptionalSurrogate>(reader);
                 if (surrogate == null)
                     return null;
-                return surrogate.ToOptional(serializer);
+
+                var optionalType = Nullable.GetUnderlyingType(objectType) ?? objectType;
+                return surrogate.ToOptional(serializer, optionalType);
             }
             catch (Exception ex) when (ex is not JsonSerializationException)
             {
@@ -63,7 +64,6 @@ namespace Haondt.Json.Converters
     public class OptionalSurrogate
     {
         public JToken? Value { get; set; }
-        public required string Type { get; set; }
         public static OptionalSurrogate FromOptional(object optional, JsonSerializer serializer)
         {
             var optionalType = optional.GetType();
@@ -75,19 +75,15 @@ namespace Haondt.Json.Converters
             var hasValue = (bool)hasValueProperty.GetValue(optional)!;
             object? value = hasValue ? valueProperty.GetValue(optional) : null;
 
-            var typeString = StorageKeyConvert.ConvertStorageKeyPartType(genericType, null);
             return new()
             {
                 Value = value != null ? JToken.FromObject(value, serializer) : null,
-                Type = typeString
             };
         }
 
-        public object ToOptional(JsonSerializer serializer)
+        public object ToOptional(JsonSerializer serializer, Type optionalType)
         {
-            var valueType = StorageKeyConvert.ConvertStorageKeyPartType(Type, null);
-            var optionalType = typeof(Optional<>).MakeGenericType(valueType);
-
+            var valueType = optionalType.GetGenericArguments()[0];
             if (Value != null && Value.Type != JTokenType.Null)
             {
                 var constructor = optionalType.GetConstructor([valueType]);

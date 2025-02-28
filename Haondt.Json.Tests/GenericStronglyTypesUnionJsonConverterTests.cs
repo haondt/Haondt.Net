@@ -19,8 +19,8 @@ namespace Haondt.Json.Tests
         {
             _union1 = new("123");
             _union2 = new(456);
-            _json1 = "{\"value\":\"123\",\"valueType\":\"System.String, System.Private.CoreLib\",\"unionTypes\":[\"System.String, System.Private.CoreLib\",\"System.Int32, System.Private.CoreLib\"]}";
-            _json2 = "{\"value\":456,\"valueType\":\"System.Int32, System.Private.CoreLib\",\"unionTypes\":[\"System.String, System.Private.CoreLib\",\"System.Int32, System.Private.CoreLib\"]}";
+            _json1 = "{\"value\":\"123\",\"valueType\":\"System.String, System.Private.CoreLib\"}";
+            _json2 = "{\"value\":456,\"valueType\":\"System.Int32, System.Private.CoreLib\"}";
             _serializerSettings = new();
             _serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             var typeNameConversionSerializerSettings = new StorageKeySerializerSettings

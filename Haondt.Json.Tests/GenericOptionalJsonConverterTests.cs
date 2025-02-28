@@ -125,7 +125,7 @@ namespace Haondt.Json.Tests
         public void WillDeserializeNullableGenericOptional()
         {
             var serialized = JsonConvert.DeserializeObject<Optional<List<string>>?>(_json, _serializerSettings);
-            serialized.Value.Value.Should().BeEquivalentTo(_optional.Value);
+            serialized!.Value.Value.Should().BeEquivalentTo(_optional.Value);
         }
 
     }

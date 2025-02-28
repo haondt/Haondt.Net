@@ -37,11 +37,11 @@ namespace Haondt.Json.Converters
 
             try
             {
-                var unionType = Nullable.GetUnderlyingType(objectType) ?? objectType;
                 var surrogate = serializer.Deserialize<UnionSurrogate>(reader);
                 if (surrogate == null)
                     return null;
-                return surrogate.ToUnion(serializer, typeConversionSerializerSettings);
+                var unionType = Nullable.GetUnderlyingType(objectType) ?? objectType;
+                return surrogate.ToUnion(serializer, unionType, typeConversionSerializerSettings);
             }
             catch (Exception ex) when (ex is not JsonSerializationException)
             {
@@ -59,7 +59,7 @@ namespace Haondt.Json.Converters
 
             try
             {
-                var surrogate = UnionSurrogate.FromUnion(value, typeConversionSerializerSettings);
+                var surrogate = UnionSurrogate.FromUnion(value, serializer, typeConversionSerializerSettings);
                 serializer.Serialize(writer, surrogate);
             }
             catch (Exception ex) when (ex is not JsonSerializationException)
@@ -73,8 +73,7 @@ namespace Haondt.Json.Converters
     {
         public required JToken Value { get; set; }
         public required string ValueType { get; set; }
-        public required List<string> UnionTypes { get; set; }
-        public static UnionSurrogate FromUnion(object union, StorageKeySerializerSettings? typeConversionSerializerSettings = null)
+        public static UnionSurrogate FromUnion(object union, JsonSerializer serializer, StorageKeySerializerSettings? typeConversionSerializerSettings = null)
         {
             var unionType = union.GetType();
             var genericTypes = unionType.GetGenericArguments();
@@ -82,30 +81,17 @@ namespace Haondt.Json.Converters
             var unwrapMethod = methods.First(m => m.Name == "Unwrap");
 
             var value = unwrapMethod.Invoke(union, [])!;
-            var valueTypeStrings = genericTypes.Select(t => StorageKeyConvert.ConvertStorageKeyPartType(t, typeConversionSerializerSettings)).ToList();
             var valueTypeString = StorageKeyConvert.ConvertStorageKeyPartType(value.GetType(), typeConversionSerializerSettings);
             return new()
             {
-                Value = JToken.FromObject(value),
-                UnionTypes = valueTypeStrings,
+                Value = JToken.FromObject(value, serializer),
                 ValueType = valueTypeString
             };
         }
 
-        public object ToUnion(JsonSerializer serializer, StorageKeySerializerSettings? typeConversionSerializerSettings = null)
+        public object ToUnion(JsonSerializer serializer, Type unionType, StorageKeySerializerSettings? typeConversionSerializerSettings = null)
         {
             var valueType = StorageKeyConvert.ConvertStorageKeyPartType(ValueType, typeConversionSerializerSettings);
-            var unionTypes = UnionTypes.Select(t => StorageKeyConvert.ConvertStorageKeyPartType(t, null)).ToArray();
-            var unionType = (UnionTypes.Count switch
-            {
-                2 => typeof(Union<,>),
-                3 => typeof(Union<,,>),
-                4 => typeof(Union<,,,>),
-                5 => typeof(Union<,,,,>),
-                6 => typeof(Union<,,,,,>),
-                _ => throw new JsonSerializationException($"Unable to handle union with {UnionTypes.Count} types.")
-            }).MakeGenericType(unionTypes);
-
             var constructor = unionType.GetConstructor([valueType]);
             return constructor!.Invoke([Value.ToObject(valueType, serializer)]);
         }
