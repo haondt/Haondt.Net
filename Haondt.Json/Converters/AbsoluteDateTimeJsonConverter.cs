@@ -1,7 +1,7 @@
 ﻿using Haondt.Core.Models;
 using Newtonsoft.Json;
 
-namespace Haondt.Core.Converters
+namespace Haondt.Json.Converters
 {
     public class AbsoluteDateTimeJsonConverter : JsonConverter
     {

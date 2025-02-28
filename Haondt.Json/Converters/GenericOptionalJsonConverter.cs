@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
 
-namespace Haondt.Core.Converters
+namespace Haondt.Json.Converters
 {
     public class GenericOptionalJsonConverter : JsonConverter
     {
@@ -24,10 +24,18 @@ namespace Haondt.Core.Converters
         {
             if (reader.TokenType == JsonToken.Null)
                 return null;
-            var surrogate = serializer.Deserialize<JObject>(reader);
-            if (surrogate == null)
-                return null;
-            return OptionalSurrogate.ToOptional(surrogate, serializer);
+            try
+            {
+
+                var surrogate = serializer.Deserialize<JObject>(reader);
+                if (surrogate == null)
+                    return null;
+                return OptionalSurrogate.ToOptional(surrogate, serializer);
+            }
+            catch (Exception ex) when (ex is not JsonSerializationException)
+            {
+                throw new JsonSerializationException($"Failed to deserialize optional {objectType}", ex);
+            }
 
         }
 
@@ -39,8 +47,16 @@ namespace Haondt.Core.Converters
                 return;
             }
 
-            var surrogate = OptionalSurrogate.FromOptional(value);
-            serializer.Serialize(writer, surrogate);
+            try
+            {
+                var surrogate = OptionalSurrogate.FromOptional(value);
+                serializer.Serialize(writer, surrogate);
+            }
+            catch (Exception ex) when (ex is not JsonSerializationException)
+            {
+                throw new JsonSerializationException($"Failed to serialize optional", ex);
+            }
+
         }
     }
 

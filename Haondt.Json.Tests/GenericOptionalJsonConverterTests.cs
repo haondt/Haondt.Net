@@ -1,6 +1,6 @@
 ﻿using FluentAssertions;
-using Haondt.Core.Converters;
 using Haondt.Core.Models;
+using Haondt.Json.Converters;
 using Newtonsoft.Json;
 using System.Reflection;
 
