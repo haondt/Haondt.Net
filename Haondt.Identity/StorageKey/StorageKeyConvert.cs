@@ -99,7 +99,7 @@ namespace Haondt.Identity.StorageKey
                     return Type.GetType(storageKeyPartType)
                         ?? throw new InvalidOperationException($"Unable to parse {nameof(Type)} from {nameof(storageKeyPartType)}");
                 case TypeNameStrategy.LookupTable:
-                    return settings!.LookupTable.Value.GetByValue(storageKeyPartType);
+                    return settings!.LookupTable.Value!.GetByValue(storageKeyPartType);
                 case TypeNameStrategy.SimpleTypeConverter:
                     return SimpleTypeConverter.StringToType(storageKeyPartType);
             };

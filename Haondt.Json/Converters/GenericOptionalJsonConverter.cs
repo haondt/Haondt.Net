@@ -27,10 +27,10 @@ namespace Haondt.Json.Converters
             try
             {
 
-                var surrogate = serializer.Deserialize<JObject>(reader);
+                var surrogate = serializer.Deserialize<OptionalSurrogate>(reader);
                 if (surrogate == null)
                     return null;
-                return OptionalSurrogate.ToOptional(surrogate, serializer);
+                return surrogate.ToOptional(serializer);
             }
             catch (Exception ex) when (ex is not JsonSerializationException)
             {
@@ -62,7 +62,7 @@ namespace Haondt.Json.Converters
 
     public class OptionalSurrogate
     {
-        public object? Value { get; set; }
+        public JToken? Value { get; set; }
         public required string Type { get; set; }
         public static OptionalSurrogate FromOptional(object optional)
         {
@@ -78,22 +78,20 @@ namespace Haondt.Json.Converters
             var typeString = StorageKeyConvert.ConvertStorageKeyPartType(genericType, null);
             return new()
             {
-                Value = value,
+                Value = value != null ? JToken.FromObject(value) : null,
                 Type = typeString
             };
         }
 
-        public static object ToOptional(JObject surrogate, JsonSerializer serializer)
+        public object ToOptional(JsonSerializer serializer)
         {
-            var valueTypeString = surrogate[nameof(Type)]!.ToString();
-            var valueType = StorageKeyConvert.ConvertStorageKeyPartType(valueTypeString, null);
+            var valueType = StorageKeyConvert.ConvertStorageKeyPartType(Type, null);
             var optionalType = typeof(Optional<>).MakeGenericType(valueType);
 
-            if (surrogate.TryGetValue(nameof(Value), out var valueToken) && valueToken.Type != JTokenType.Null)
+            if (Value != null && Value.Type != JTokenType.Null)
             {
-                var valueObject = valueToken.ToObject(valueType, serializer);
                 var constructor = optionalType.GetConstructor([valueType]);
-                return constructor!.Invoke([valueObject]);
+                return constructor!.Invoke([Value.ToObject(valueType)]);
             }
             else
             {
