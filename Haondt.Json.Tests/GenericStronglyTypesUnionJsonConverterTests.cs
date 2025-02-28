@@ -23,8 +23,11 @@ namespace Haondt.Json.Tests
             _json2 = "{\"value\":456,\"valueType\":\"System.Int32, System.Private.CoreLib\",\"unionTypes\":[\"System.String, System.Private.CoreLib\",\"System.Int32, System.Private.CoreLib\"]}";
             _serializerSettings = new();
             _serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            _serializerSettings.Converters.Add(new GenericStronglyTypedUnionJsonConverter());
-            StorageKeyConvert.DefaultSerializerSettings.TypeNameStrategy = TypeNameStrategy.SimpleTypeConverter;
+            var typeNameConversionSerializerSettings = new StorageKeySerializerSettings
+            {
+                TypeNameStrategy = TypeNameStrategy.SimpleTypeConverter
+            };
+            _serializerSettings.Converters.Add(new GenericStronglyTypedUnionJsonConverter(typeNameConversionSerializerSettings));
 
         }
 
