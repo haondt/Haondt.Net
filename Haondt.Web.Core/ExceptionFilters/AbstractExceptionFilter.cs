@@ -7,7 +7,7 @@ namespace Haondt.Web.Core.ExceptionFilters
     {
         protected readonly Type _exceptionType;
         protected readonly int _code;
-        protected readonly Func<ExceptionContext, string>? _messageFactory;
+        protected readonly Func<ExceptionContext, object>? _messageFactory;
 
         public AbstractExceptionFilter(Type exceptionType, int code, string message)
         {
@@ -30,7 +30,7 @@ namespace Haondt.Web.Core.ExceptionFilters
         protected abstract bool CheckExceptionType(Type exceptionType);
         protected virtual IActionResult FormatResult(ExceptionContext context)
         {
-            return  new ObjectResult(_messageFactory?.Invoke(context) ?? context.Exception.ToString()) { StatusCode = _code };
+            return new ObjectResult(_messageFactory?.Invoke(context) ?? context.Exception.ToString()) { StatusCode = _code };
         }
 
         public override void OnException(ExceptionContext context)

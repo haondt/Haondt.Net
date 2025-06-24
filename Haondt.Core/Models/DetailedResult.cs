@@ -80,8 +80,8 @@ namespace Haondt.Core.Models
             get
             {
                 if (_success)
-                    return _reason;
-                throw new InvalidOperationException("DetailedResult was successful");
+                    throw new InvalidOperationException("DetailedResult was successful");
+                return _reason;
             }
         }
 
