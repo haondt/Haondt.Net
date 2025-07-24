@@ -48,5 +48,15 @@ namespace Haondt.Persistence.Tests
                 KeyEncodingStrategy = KeyEncodingStrategy.String
             };
         }
+
+        // I can't remember but I think mongo does not support transactions in the same way as SQL databases.
+        public override Task WillPerformTransactionalBatchAdd() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchAddForeignKey() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchDelete() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchDeleteByForeignKey() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchDeleteForeignKey() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchRemoveForeignKey() => Task.CompletedTask;
+        public override Task WillPerformTransactionalBatchSet() => Task.CompletedTask;
+        public override Task WillThrowExceptionOnConflictingTransactionBatchAdd() => Task.CompletedTask;
     }
 }

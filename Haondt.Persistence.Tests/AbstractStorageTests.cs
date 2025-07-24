@@ -453,7 +453,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchSet()
+        public virtual async Task WillPerformTransactionalBatchSet()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -482,7 +482,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchAddForeignKey()
+        public virtual async Task WillPerformTransactionalBatchAddForeignKey()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -529,7 +529,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchDelete()
+        public virtual async Task WillPerformTransactionalBatchDelete()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -564,7 +564,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchDeleteByForeignKey()
+        public virtual async Task WillPerformTransactionalBatchDeleteByForeignKey()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -606,7 +606,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchDeleteForeignKey()
+        public virtual async Task WillPerformTransactionalBatchDeleteForeignKey()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -673,7 +673,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchAdd()
+        public virtual async Task WillPerformTransactionalBatchAdd()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();
@@ -698,7 +698,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillThrowExceptionOnConflictingTransactionBatchAdd()
+        public virtual async Task WillThrowExceptionOnConflictingTransactionBatchAdd()
         {
             var id = Guid.NewGuid().ToString();
             var key = StorageKey<Car>.Create(id);
@@ -714,7 +714,7 @@ namespace Haondt.Persistence.Tests
         }
 
         [Fact]
-        public async Task WillPerformTransactionalBatchRemoveForeignKey()
+        public virtual async Task WillPerformTransactionalBatchRemoveForeignKey()
         {
             var id = Guid.NewGuid().ToString();
             var id2 = Guid.NewGuid().ToString();

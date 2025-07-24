@@ -43,5 +43,23 @@ namespace Haondt.Core.Models
             value = _value;
             return _hasValue;
         }
+
+        public override bool Equals(object? obj) => obj is Optional<T> other && Equals(other);
+
+        public bool Equals(Optional<T> other)
+        {
+            if (_hasValue != other._hasValue)
+                return false;
+            if (!_hasValue)
+                return true;
+            return EqualityComparer<T>.Default.Equals(_value, other._value);
+        }
+
+        public override int GetHashCode()
+        {
+            if (!_hasValue)
+                return 0;
+            return _value.GetHashCode();
+        }
     }
 }

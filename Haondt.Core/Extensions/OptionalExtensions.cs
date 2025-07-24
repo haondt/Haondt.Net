@@ -23,6 +23,7 @@ namespace Haondt.Core.Extensions
                 return converter(optional.Value);
             return new();
         }
+
         public static async Task<Optional<T2>> As<T1, T2>(this Optional<T1> optional, Func<T1, Task<T2>> converter) where T1 : notnull where T2 : notnull
         {
             if (optional.HasValue)
@@ -30,5 +31,27 @@ namespace Haondt.Core.Extensions
             return new();
         }
 
+        public static T? Unwrap<T>(this Optional<T> optional) where T : class
+        {
+            if (optional.TryGetValue(out var value))
+                return value;
+            return default;
+        }
+
+        public static Result<T> AsResult<T>(this Optional<T> optional) where T : notnull
+        {
+            return optional.TryGetValue(out var value) ? Result<T>.Success(value) : Result<T>.Failure;
+        }
+    }
+
+    // hack to avoid method signature conflicts
+    public static class OptionalExtensions2
+    {
+        public static T? Unwrap<T>(this Optional<T> optional) where T : struct
+        {
+            if (optional.TryGetValue(out var value))
+                return value;
+            return null;
+        }
     }
 }
