@@ -17,6 +17,7 @@ namespace Haondt.Core.Extensions
             return defaultValueFactory();
         }
 
+        [Obsolete("Use Map<T1, T2>")]
         public static Optional<T2> As<T1, T2>(this Optional<T1> optional, Func<T1, T2> converter) where T1 : notnull where T2 : notnull
         {
             if (optional.HasValue)
@@ -24,10 +25,25 @@ namespace Haondt.Core.Extensions
             return new();
         }
 
+        [Obsolete("Use Map<T1, T2>")]
         public static async Task<Optional<T2>> As<T1, T2>(this Optional<T1> optional, Func<T1, Task<T2>> converter) where T1 : notnull where T2 : notnull
         {
             if (optional.HasValue)
                 return await converter(optional.Value);
+            return new();
+        }
+
+        public static Optional<T2> Map<T1, T2>(this Optional<T1> optional, Func<T1, T2> mapper) where T1 : notnull where T2 : notnull
+        {
+            if (optional.HasValue)
+                return mapper(optional.Value);
+            return new();
+        }
+
+        public static async Task<Optional<T2>> Map<T1, T2>(this Optional<T1> optional, Func<T1, Task<T2>> mapper) where T1 : notnull where T2 : notnull
+        {
+            if (optional.HasValue)
+                return await mapper(optional.Value);
             return new();
         }
 
@@ -42,6 +58,10 @@ namespace Haondt.Core.Extensions
         {
             return optional.TryGetValue(out var value) ? Result<T>.Success(value) : Result<T>.Failure;
         }
+
+        public static Optional<T2> Bind<T1, T2>(this Optional<T1> optional, Func<T1, Optional<T2>> projection) where T1 : notnull where T2 : notnull =>
+            optional.TryGetValue(out var value) ? projection(value) : new();
+
     }
 
     // hack to avoid method signature conflicts
