@@ -11,6 +11,22 @@ namespace Haondt.Web.Core.Extensions
         private const string HX_RESELECT = "HX-Reselect";
         private const string HX_LOCATION = "HX-Location";
         private const string HX_TRIGGER = "HX-Trigger";
+        private const string HX_REDIRECT = "HX-Redirect";
+
+        /// <summary>
+        /// Trigger a client side redirection to a new url that will do a full reload of the whole page.
+        /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-redirect"/>
+        /// </remarks>
+        /// <param name="responseData"></param>
+        /// <param name="url">url to redirect to</param>
+        /// <returns></returns>
+        /// <example>responseData.HxRedirect("/test")</example>
+        public static IResponseData HxRedirect(this IResponseData responseData, string url)
+        {
+            return responseData.Header(HX_REDIRECT, url);
+        }
 
         /// <summary>
         /// Push a URL into the browser location history.
