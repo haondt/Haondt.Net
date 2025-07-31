@@ -4,6 +4,7 @@ namespace Haondt.Core.Extensions
 {
     public static class OptionalExtensions
     {
+
         public static T Or<T>(this Optional<T> optional, T defaultValue) where T : notnull
         {
             if (optional.HasValue)
@@ -15,6 +16,19 @@ namespace Haondt.Core.Extensions
             if (optional.HasValue)
                 return optional.Value;
             return defaultValueFactory();
+        }
+        public static Optional<T> Or<T>(this Optional<T> optional, Optional<T> alternativeValue) where T : notnull
+        {
+            if (optional.HasValue)
+                return optional.Value;
+            return alternativeValue;
+        }
+
+        public static Optional<T> Or<T>(this Optional<T> optional, Func<Optional<T>> alternativeValueFactory) where T : notnull
+        {
+            if (optional.HasValue)
+                return optional.Value;
+            return alternativeValueFactory();
         }
 
         [Obsolete("Use Map<T1, T2>")]
