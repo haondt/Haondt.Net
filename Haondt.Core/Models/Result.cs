@@ -47,7 +47,7 @@ namespace Haondt.Core.Models
     {
         private readonly bool _success;
         public readonly bool IsSuccessful => _success;
-        public Result(bool isSuccessful) { _success = !isSuccessful; }
+        public Result(bool success) { _success = success; }
 
         public static Result Failure { get; } = new Result(false);
         public static Result Success { get; } = new Result(true);
