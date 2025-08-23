@@ -12,6 +12,138 @@ namespace Haondt.Web.Core.Extensions
         private const string HX_LOCATION = "HX-Location";
         private const string HX_TRIGGER = "HX-Trigger";
         private const string HX_REDIRECT = "HX-Redirect";
+        private const string HX_TRIGGER_AFTER_SETTLE = "HX-Trigger-After-Settle";
+        private const string HX_TRIGGER_AFTER_SWAP = "HX-Trigger-After-Swap";
+
+        /// <summary>
+        /// Trigger events after the <a href="https://htmx.org/docs/#request-operations">settling step</a>
+        /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        public static IResponseData HxTriggerAfterSettle(this IResponseData responseData,
+            string @event,
+            string? body = null,
+            string? target = null)
+        {
+            return HxTriggerAfterSettle(responseData, @event, new Dictionary<string, string> { { "value", body ?? "" } }, target);
+        }
+
+        /// <summary>
+        /// Trigger events after the <a href="https://htmx.org/docs/#request-operations">settling step</a>
+        /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        public static IResponseData HxTriggerAfterSettle(this IResponseData responseData,
+            string @event,
+            Dictionary<string, string> body,
+            string? target = null)
+        {
+            foreach (var key in body.Keys)
+                if ("target".Equals(key, StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException($"Cannot use key {key}, \"target\" is a reserved keyword");
+
+            return responseData.ReplaceHeader(HX_TRIGGER_AFTER_SETTLE, existing =>
+            {
+                Dictionary<string, Dictionary<string, string>> existingPayload;
+                if (existing.Length > 0 && existing[0] != null)
+                {
+                    try
+                    {
+                        existingPayload = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(existing[0]!)
+                            ?? new();
+                    }
+                    catch
+                    {
+                        existingPayload = new();
+                    }
+                }
+                else
+                    existingPayload = new();
+
+                existingPayload[@event] = body ?? new();
+                if (target != null)
+                    existingPayload[@event]["target"] = target;
+
+                return JsonConvert.SerializeObject(existingPayload);
+            });
+        }
+
+        /// <summary>
+        /// Trigger events after the <a href="https://htmx.org/docs/#request-operations">swap step</a>
+        /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        public static IResponseData HxTriggerAfterSwap(this IResponseData responseData,
+            string @event,
+            string? body = null,
+            string? target = null)
+        {
+            return HxTriggerAfterSwap(responseData, @event, new Dictionary<string, string> { { "value", body ?? "" } }, target);
+        }
+
+        /// <summary>
+        /// Trigger events after the <a href="https://htmx.org/docs/#request-operations">swap step</a>
+        /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
+        /// <param name="responseData"></param>
+        /// <param name="event">event to trigger</param>
+        /// <param name="body">event details</param>
+        /// <param name="target">target a different element with the event</param>
+        /// <returns></returns>
+        public static IResponseData HxTriggerAfterSwap(this IResponseData responseData,
+            string @event,
+            Dictionary<string, string> body,
+            string? target = null)
+        {
+            foreach (var key in body.Keys)
+                if ("target".Equals(key, StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException($"Cannot use key {key}, \"target\" is a reserved keyword");
+
+            return responseData.ReplaceHeader(HX_TRIGGER_AFTER_SWAP, existing =>
+            {
+                Dictionary<string, Dictionary<string, string>> existingPayload;
+                if (existing.Length > 0 && existing[0] != null)
+                {
+                    try
+                    {
+                        existingPayload = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(existing[0]!)
+                            ?? new();
+                    }
+                    catch
+                    {
+                        existingPayload = new();
+                    }
+                }
+                else
+                    existingPayload = new();
+
+                existingPayload[@event] = body ?? new();
+                if (target != null)
+                    existingPayload[@event]["target"] = target;
+
+                return JsonConvert.SerializeObject(existingPayload);
+            });
+        }
 
         /// <summary>
         /// Trigger a client side redirection to a new url that will do a full reload of the whole page.
@@ -43,15 +175,12 @@ namespace Haondt.Web.Core.Extensions
             return responseData.Header(HX_PUSH_URL, url);
         }
 
-        // TODO, idk how I want to solve this since it will be a json dict of events + payloads
-        //public static IResponseData HxTriggerAfterSettle(this IResponseData responseData, string @event, object payload)
-        //{
-        //    return responseData.Header(HX_TRIGGER_AFTER_SETTLE, );
-        //}
-
         /// <summary>
         /// Trigger client side actions on the target element within a response to htmx.
         /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
         /// <param name="responseData"></param>
         /// <param name="event">event to trigger</param>
         /// <param name="body">event details</param>
@@ -68,6 +197,9 @@ namespace Haondt.Web.Core.Extensions
         /// <summary>
         /// Trigger client side actions on the target element within a response to htmx.
         /// </summary>
+        /// <remarks>
+        /// <a href="https://htmx.org/headers/hx-trigger/"/>
+        /// </remarks>
         /// <param name="responseData"></param>
         /// <param name="event">event to trigger</param>
         /// <param name="body">event details</param>
