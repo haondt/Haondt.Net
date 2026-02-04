@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using Haondt.Core.Models;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Haondt.Web.Core.ModelBinders
 {

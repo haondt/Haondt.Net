@@ -8,8 +8,9 @@ $projects = @(
     ".\Haondt.Persistence.Sqlite\Haondt.Persistence.Sqlite.csproj",
     ".\Haondt.Web\Haondt.Web.csproj",
     ".\Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj",
-    ".\Haondt.Web.Core\Haondt.Web.Core.csproj"
-    ".\Haondt.Json\Haondt.Json.csproj"
+    ".\Haondt.Web.Core\Haondt.Web.Core.csproj",
+    ".\Haondt.Json\Haondt.Json.csproj",
+    ".\Haondt.Persistence.EntityFrameworkCore\Haondt.Persistence.EntityFrameworkCore.csproj"
 )
 
 $versionSuffix = "alpha-" + (Get-Date -Format "yyyyMMddHHmmss")

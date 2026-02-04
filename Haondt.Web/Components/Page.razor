@@ -1,24 +1,26 @@
-﻿@using Haondt.Web.Core.Components
+﻿@using Haondt.Core.Models
 @using Haondt.Web.Core.Extensions
 @using Haondt.Web.Services
 @inject IEnumerable<IHeadEntryDescriptor> HeadEntries
 
 @code {
 
-    [Parameter]
+    [Parameter, EditorRequired]
     public required IComponent Content { get; set; }
+
+    protected string MetaViewportContent => "width=device-width, initial-scale=1, viewport-fit=cover";
 }
 
 <!DOCTYPE html>
-<html lang="en" style="overflow:auto;">
+<html lang="en">
     <head>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+        <meta charset="utf-8" name="viewport" content="@MetaViewportContent">
     @foreach(var headEntry in HeadEntries)
     {
         <text>@((MarkupString)headEntry.Render())</text>
     }
     </head>
-    <body style="display:flex;flex-direction:column;overflow:auto;height:100vh;">
+    <body>
         <ObjectComponent Component="Content"/>
     </body>
 </html>

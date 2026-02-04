@@ -1,6 +1,8 @@
 ﻿using Haondt.Web.Assets;
 using Haondt.Web.BulmaCSS.Services;
 using Haondt.Web.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Haondt.Web.BulmaCSS.Extensions
 {
@@ -18,7 +20,7 @@ namespace Haondt.Web.BulmaCSS.Extensions
 
         public static IServiceCollection AddBulmaCSSServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<ILayoutComponentFactory, BulmaCSSLayoutComponentFactory>();
+            services.AddSingleton<ILayoutComponentFactory, BulmaCSSLayoutComponentFactory>();
             return services;
         }
 
@@ -41,14 +43,12 @@ namespace Haondt.Web.BulmaCSS.Extensions
                 Uri = "https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
             });
 
-            var assemblyPrefix = typeof(ServiceCollectionExtensions).Assembly.GetName().Name;
-            services.AddScoped<IHeadEntryDescriptor>(sp => new StyleSheetDescriptor
+            services.AddScoped<IHeadEntryDescriptor>(_ => new StyleSheetDescriptor
             {
-                Uri = $"/_asset/{assemblyPrefix}.wwwroot.styles.css"
+                Uri = "/static/haondt/Haondt.Web.BulmaCSS/styles.css"
             });
 
             return services;
-
         }
     }
 }

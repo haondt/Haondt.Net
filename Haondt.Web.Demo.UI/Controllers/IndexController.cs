@@ -1,7 +1,7 @@
 ﻿using Haondt.Web.Core.Controllers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Haondt.Web.Demo.Controllers
+namespace Haondt.Web.Demo.UI.Controllers
 {
     [Route("/")]
     public class IndexController : UIController

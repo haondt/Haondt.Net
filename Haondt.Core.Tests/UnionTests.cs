@@ -35,7 +35,7 @@ namespace Haondt.Core.Tests
             union4.Unwrap().Should().BeEquivalentTo(new Optional<string>());
             union5.Unwrap().Should().BeEquivalentTo(new FooClass { Value = "foo" });
             union6.Unwrap().Should().BeOfType<Optional<FooClass>>();
-            union6.Unwrap().As<Optional<FooClass>>().Value.Value.Should().Be("bar");
+            union6.Unwrap().As<Optional<FooClass>>().Value!.Value.Should().Be("bar");
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace Haondt.Core.Tests
             boolValue.Should().Be(true);
             optionalStringValue.Should().BeEquivalentTo(new Optional<string>());
             fooValue.Should().BeEquivalentTo(new FooClass { Value = "foo" });
-            optionalFooValue.Value.Value.Should().Be("bar");
+            optionalFooValue.Value!.Value.Should().Be("bar");
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace Haondt.Core.Tests
             union3.As<Optional<FooClass>>().HasValue.Should().BeFalse();
             union4.As<Optional<FooClass>>().HasValue.Should().BeFalse();
             union5.As<Optional<FooClass>>().HasValue.Should().BeFalse();
-            union6.As<Optional<FooClass>>().Value.Value.Value.Should().Be("bar");
+            union6.As<Optional<FooClass>>().Value.Value!.Value.Should().Be("bar");
         }
 
         [Fact]

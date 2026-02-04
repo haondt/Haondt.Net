@@ -1,19 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
   </PropertyGroup>
 
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.2" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <ProjectReference Include="..\Haondt.Web.BulmaCSS\Haondt.Web.BulmaCSS.csproj" />
-    <ProjectReference Include="..\Haondt.Web.Core\Haondt.Web.Core.csproj" />
-    <ProjectReference Include="..\Haondt.Web.Demo.UI\Haondt.Web.Demo.UI.csproj" />
     <ProjectReference Include="..\Haondt.Web\Haondt.Web.csproj" />
   </ItemGroup>
 
+		<PropertyGroup>
+  <StaticWebAssetBasePath>shared</StaticWebAssetBasePath>
+</PropertyGroup>
 
 
 </Project>

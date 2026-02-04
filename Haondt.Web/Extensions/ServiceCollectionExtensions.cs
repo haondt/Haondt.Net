@@ -1,9 +1,10 @@
 ﻿using Haondt.Web.Assets;
 using Haondt.Web.Core.Extensions;
-using Haondt.Web.Middleware;
 using Haondt.Web.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Haondt.Web.Extensions
 {
@@ -18,6 +19,9 @@ namespace Haondt.Web.Extensions
             services.AddTransient<IMemoryCache, MemoryCache>();
             services.AddScoped<IAssetHandler, AssetHandler>();
 
+            services.AddSingleton<ILayoutComponentFactory, LayoutComponentFactory>();
+            services.AddSingleton<IComponentFactory, ComponentFactory>();
+
             if (options.HtmxScriptUri.TryGetValue(out var htmxScriptUri))
                 services.AddScoped<IHeadEntryDescriptor>(_ => new ScriptDescriptor
                 {
@@ -29,7 +33,6 @@ namespace Haondt.Web.Extensions
                     Uri = hyperscriptScriptUri
                 });
 
-            services.AddScoped<RenderPageFilter>();
 
             return services;
         }

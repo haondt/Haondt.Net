@@ -8,6 +8,6 @@ namespace Haondt.Web.Services
         public required string Title { get; init; }
         public Optional<string> Id { get; init; }
 
-        public string Render() => $"<title{Id.As(s => $" id=\"{s}\"").Or("")}>{Title}</title>";
+        public string Render() => $"<title{Id.Map(s => $" id=\"{s}\"").Or("")}>{Title}</title>";
     }
 }

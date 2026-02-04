@@ -7,7 +7,6 @@ namespace Haondt.Web.Core.Extensions
         public static IServiceCollection AddHaondtWebCoreServices(this IServiceCollection services)
         {
             services.AddHttpContextAccessor();
-            services.AddSingleton<IComponentFactory, ComponentFactory>();
             services.AddSingleton<IExceptionActionResultFactory, ExceptionActionResultFactory>();
             return services;
         }

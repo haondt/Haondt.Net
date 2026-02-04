@@ -13,5 +13,6 @@ tasks:
       - csproj: ./Haondt.Persistence.MongoDb/Haondt.Persistence.MongoDb.csproj
       - csproj: ./Haondt.Persistence.Postgresql/Haondt.Persistence.Postgresql.csproj
       - csproj: ./Haondt.Persistence.Sqlite/Haondt.Persistence.Sqlite.csproj
+      - csproj: ./Haondt.Persistence.EntityFrameworkCore/Haondt.Persistence.EntityFrameworkCore.csproj
     registries:
       - gitlab

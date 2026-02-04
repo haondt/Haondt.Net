@@ -24,6 +24,7 @@ namespace Haondt.Web.Core.Middleware
             {
                 try
                 {
+                    context.Response.Clear();
                     var result = await _actionResultFactory.CreateAsync(exception, context);
                     await result.ExecuteAsync(context);
                 }

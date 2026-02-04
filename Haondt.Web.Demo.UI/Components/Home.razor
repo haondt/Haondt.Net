@@ -1,7 +1,7 @@
-﻿@using Haondt.Web.Core.Components
+﻿@using Haondt.Web.Core.Attributes
 @using Haondt.Web.Core.Extensions
 @using Haondt.Web.Core.Http
-
+@attribute [RenderPage]
 @code {
     [CascadingParameter]
     public IResponseData Response { get; set; } = default!;

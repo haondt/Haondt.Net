@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Haondt.Identity\Haondt.Identity.csproj" />
+    <ProjectReference Include="..\Haondt.Core\Haondt.Core.csproj" />
   </ItemGroup>
 
 </Project>

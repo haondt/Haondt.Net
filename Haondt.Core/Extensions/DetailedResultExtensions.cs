@@ -4,32 +4,46 @@ namespace Haondt.Core.Extensions
 {
     public static class DetailedResultExtensions
     {
-        public static T3 Match<T1, T2, T3>(this DetailedResult<T1, T2> result, Func<T1, T3> success, Func<T2, T3> failure)
+        extension<T, TReason>(DetailedResult<T, TReason> result) where T : notnull
         {
-            if (result.IsSuccessful)
-                return success(result.Value);
-            return failure(result.Reason);
+            public Optional<T> AsOptional()
+            {
+                return result.TryGetValue(out var value) ? new(value) : new();
+            }
         }
 
-        public static T2 Match<T1, T2>(this DetailedResult<T1> result, Func<T2> success, Func<T1, T2> failure)
+        extension<T, TReason>(DetailedResult<T, TReason> result)
         {
-            if (result.IsSuccessful)
-                return success();
-            return failure(result.Reason);
+            public T3 Match<T3>(Func<T, T3> success, Func<TReason, T3> failure)
+            {
+                if (result.IsSuccessful)
+                    return success(result.Value);
+                return failure(result.Reason);
+            }
+
+            public DetailedResult<T2, TReason> Map<T2>(Func<T, T2> mapper)
+            {
+                if (result.IsSuccessful)
+                    return new(mapper(result.Value));
+                return new(result.Reason);
+            }
         }
 
-        public static T2 Match<T1, T2>(this DetailedResult<T1> result, T2 success, Func<T1, T2> failure)
+        extension<T>(DetailedResult<T> result)
         {
-            if (result.IsSuccessful)
-                return success;
-            return failure(result.Reason);
-        }
+            public T2 Match<T2>(Func<T2> success, Func<T, T2> failure)
+            {
+                if (result.IsSuccessful)
+                    return success();
+                return failure(result.Reason);
+            }
 
-        public static DetailedResult<T2, TReason> Map<T1, TReason, T2>(this DetailedResult<T1, TReason> result, Func<T1, T2> mapper)
-        {
-            if (result.IsSuccessful)
-                return new(mapper(result.Value));
-            return new(result.Reason);
+            public T2 Match<T2>(T2 success, Func<T, T2> failure)
+            {
+                if (result.IsSuccessful)
+                    return success;
+                return failure(result.Reason);
+            }
         }
 
     }

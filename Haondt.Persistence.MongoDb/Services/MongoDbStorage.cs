@@ -12,7 +12,7 @@ namespace Haondt.Persistence.MongoDb.Services
     public class MongoDbStorage : IStorage
     {
         protected readonly IMongoCollection<HaondtMongoDbDocument> _collection;
-        protected readonly IMongoQueryable<HaondtMongoDbDocument> _queryableCollection;
+        protected readonly IQueryable<HaondtMongoDbDocument> _queryableCollection;
 
         public MongoDbStorage(
             string database,
@@ -202,7 +202,7 @@ namespace Haondt.Persistence.MongoDb.Services
                 .AddToSetEach(d => d.ForeignKeys, foreignKeys.Cast<StorageKey>());
 
             return _collection.FindOneAndUpdateAsync<HaondtMongoDbDocument>(
-                d => d.PrimaryKey == key,
+                Builders<HaondtMongoDbDocument>.Filter.Eq(d => d.PrimaryKey, key),
                 updateDefinition,
                 new FindOneAndUpdateOptions<HaondtMongoDbDocument, HaondtMongoDbDocument>
                 {
@@ -213,14 +213,16 @@ namespace Haondt.Persistence.MongoDb.Services
 
         public Task Set<T>(StorageKey<T> key, T value) where T : notnull
         {
-            return _collection.FindOneAndReplaceAsync<HaondtMongoDbDocument>(d => d.PrimaryKey == key, new HaondtMongoDbDocument
-            {
-                PrimaryKey = key,
-                Value = value
-            }, new FindOneAndReplaceOptions<HaondtMongoDbDocument, HaondtMongoDbDocument>
-            {
-                IsUpsert = true
-            });
+            return _collection.FindOneAndReplaceAsync<HaondtMongoDbDocument>(
+                Builders<HaondtMongoDbDocument>.Filter.Eq(d => d.PrimaryKey, key),
+                new HaondtMongoDbDocument
+                {
+                    PrimaryKey = key,
+                    Value = value
+                }, new FindOneAndReplaceOptions<HaondtMongoDbDocument, HaondtMongoDbDocument>
+                {
+                    IsUpsert = true
+                });
         }
 
         public Task SetMany(List<(StorageKey Key, object Value)> values)

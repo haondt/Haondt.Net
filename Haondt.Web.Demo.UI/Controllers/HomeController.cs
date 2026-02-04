@@ -1,11 +1,11 @@
 ﻿using Haondt.Web.BulmaCSS.Components;
 using Haondt.Web.Core.Controllers;
-using Haondt.Web.Core.Extensions;
-using Haondt.Web.Core.Services;
-using Haondt.Web.Demo.Components;
+using Haondt.Web.Demo.UI.Components;
+using Haondt.Web.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Haondt.Web.Demo.Controllers
+namespace Haondt.Web.Demo.UI.Controllers
 {
     [Route("home")]
     public class HomeController(IComponentFactory componentFactory) : UIController

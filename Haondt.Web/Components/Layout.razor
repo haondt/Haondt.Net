@@ -1,0 +1,6 @@
+﻿@code {
+    [Parameter, EditorRequired]
+    public required IComponent Content { get; set; }
+}
+
+<ObjectComponent Component="@Content"/>
