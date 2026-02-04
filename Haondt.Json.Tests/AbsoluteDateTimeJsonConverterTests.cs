@@ -54,7 +54,7 @@ namespace Haondt.Json.Tests
         public void WillDeserializeNullableAbsoluteDateTime()
         {
             var serialized = JsonConvert.DeserializeObject<AbsoluteDateTime?>(_json, _serializerSettings);
-            serialized.Value.Should().Be(_absoluteDateTime);
+            serialized!.Value.Should().Be(_absoluteDateTime);
         }
     }
 }

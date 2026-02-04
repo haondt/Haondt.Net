@@ -1,5 +1,4 @@
-﻿using Haondt.Web.Assets;
-using Haondt.Web.BulmaCSS.Services;
+﻿using Haondt.Web.BulmaCSS.Services;
 using Haondt.Web.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +11,6 @@ namespace Haondt.Web.BulmaCSS.Extensions
         {
             services.AddBulmaCSSHeadEntries();
             services.AddBulmaCSSServices(configuration);
-            services.AddBulmaCSSComponents(configuration);
-            services.AddBulmaCSSAssetSources();
 
             return services;
         }
@@ -24,17 +21,6 @@ namespace Haondt.Web.BulmaCSS.Extensions
             return services;
         }
 
-        public static IServiceCollection AddBulmaCSSComponents(this IServiceCollection services, IConfiguration configuration)
-        {
-            return services;
-        }
-
-        public static IServiceCollection AddBulmaCSSAssetSources(this IServiceCollection services)
-        {
-            var assembly = typeof(ServiceCollectionExtensions).Assembly;
-            services.AddSingleton<IAssetSource>(sp => new ManifestAssetSource(assembly));
-            return services;
-        }
 
         public static IServiceCollection AddBulmaCSSHeadEntries(this IServiceCollection services)
         {

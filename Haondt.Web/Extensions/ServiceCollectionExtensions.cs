@@ -1,8 +1,5 @@
-﻿using Haondt.Web.Assets;
-using Haondt.Web.Core.Extensions;
+﻿using Haondt.Web.Core.Extensions;
 using Haondt.Web.Services;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,11 +10,6 @@ namespace Haondt.Web.Extensions
         public static IServiceCollection AddHaondtWebServices(this IServiceCollection services, IConfiguration configuration, HaondtWebOptions options)
         {
             services.AddHaondtWebCoreServices();
-
-            services.AddSingleton<IAssetProvider, AssetProvider>();
-            services.AddSingleton<FileExtensionContentTypeProvider>();
-            services.AddTransient<IMemoryCache, MemoryCache>();
-            services.AddScoped<IAssetHandler, AssetHandler>();
 
             services.AddSingleton<ILayoutComponentFactory, LayoutComponentFactory>();
             services.AddSingleton<IComponentFactory, ComponentFactory>();

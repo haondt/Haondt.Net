@@ -299,6 +299,7 @@ namespace Haondt.Web.Core.Extensions
         /// <remarks>
         /// <a href="https://htmx.org/attributes/hx-swap/"/>
         /// </remarks>
+        /// <param name="responseData"></param>
         /// <returns></returns>
         public static IResponseData HxReswap(this IResponseData responseData, string method)
         {
