@@ -1,7 +1,9 @@
 ﻿@using Haondt.Core.Models
 @using Haondt.Web.Core.Extensions
 @using Haondt.Web.Services
+@using Microsoft.Extensions.Options
 @inject IEnumerable<IHeadEntryDescriptor> HeadEntries
+@inject IOptions<HtmxOptions> HtmxOptions
 
 @code {
 
@@ -9,6 +11,14 @@
     public required IComponent Content { get; set; }
 
     protected string MetaViewportContent => "width=device-width, initial-scale=1, viewport-fit=cover";
+
+    protected Dictionary<string, object> _bodyAttributes = [];
+
+    protected override void OnInitialized()
+    {
+        if (HtmxOptions.Value.Extensions.Count > 0)
+            _bodyAttributes["hx-ext"] = string.Join(' ', HtmxOptions.Value.Extensions);
+    }
 }
 
 <!DOCTYPE html>
@@ -20,7 +30,7 @@
         <text>@((MarkupString)headEntry.Render())</text>
     }
     </head>
-    <body>
+    <body @attributes="_bodyAttributes">
         <ObjectComponent Component="Content"/>
     </body>
 </html>

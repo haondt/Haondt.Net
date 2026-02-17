@@ -35,7 +35,7 @@ namespace Haondt.Web.Services
         public virtual async Task<IResult> RenderComponentAsync(IComponent component, Type componentType, IRequestData? requestData = null, IResponseData? responseData = null)
         {
             var request = requestData ?? httpContext.HttpContext?.Request.AsRequestData() ?? throw new ArgumentNullException(nameof(requestData));
-            var response = responseData ??= httpContext.HttpContext?.Response.AsResponseData() ?? throw new ArgumentNullException(nameof(responseData));
+            var response = responseData ?? httpContext.HttpContext?.Response.AsResponseData() ?? throw new ArgumentNullException(nameof(responseData));
 
             if (!request.IsHxRequest() && componentType.GetCustomAttributes(typeof(RenderPageAttribute), false).Length != 0)
             {

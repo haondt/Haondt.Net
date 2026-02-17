@@ -4,7 +4,6 @@ namespace Haondt.Core.Extensions
 {
     public static class OptionalExtensions
     {
-
         public static T Or<T>(this Optional<T> optional, T defaultValue) where T : notnull
         {
             if (optional.HasValue)

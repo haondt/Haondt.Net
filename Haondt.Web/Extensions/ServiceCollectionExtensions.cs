@@ -13,6 +13,9 @@ namespace Haondt.Web.Extensions
 
             services.AddSingleton<ILayoutComponentFactory, LayoutComponentFactory>();
             services.AddSingleton<IComponentFactory, ComponentFactory>();
+            services.Configure<HtmxOptions>(o =>
+            {
+            });
 
             if (options.HtmxScriptUri.TryGetValue(out var htmxScriptUri))
                 services.AddScoped<IHeadEntryDescriptor>(_ => new ScriptDescriptor
