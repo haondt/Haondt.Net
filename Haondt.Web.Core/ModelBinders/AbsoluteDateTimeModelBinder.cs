@@ -1,7 +1,7 @@
 ﻿using Haondt.Core.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Haondt.UI.Shared.ModelBinders
+namespace Haondt.Web.Core.ModelBinders
 {
     public class AbsoluteDateTimeModelBinder : IModelBinder
     {
@@ -25,6 +25,12 @@ namespace Haondt.UI.Shared.ModelBinders
                 return Task.CompletedTask;
             }
 
+            if (long.TryParse(input, out var longValue))
+            {
+                bindingContext.Result = ModelBindingResult.Success(AbsoluteDateTime.Create(longValue));
+                return Task.CompletedTask;
+            }
+
             if (!DateTime.TryParse(input, out var dt))
             {
                 bindingContext.Result = bindingContext.ModelType.IsValueType && Nullable.GetUnderlyingType(bindingContext.ModelType) == null
@@ -38,7 +44,7 @@ namespace Haondt.UI.Shared.ModelBinders
                 DateTimeKind.Utc
                     or DateTimeKind.Local => AbsoluteDateTime.Create(dt),
                 DateTimeKind.Unspecified => AbsoluteDateTime.Create(new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, DateTimeKind.Local)),
-                _ => throw new ArgumentOutOfRangeException($"Unkonw {(typeof(DateTimeKind))} {dt.Kind}.")
+                _ => throw new ArgumentOutOfRangeException($"Unknown {(nameof(DateTimeKind))} {dt.Kind}.")
             };
 
             bindingContext.Result = ModelBindingResult.Success(absoluteTime);

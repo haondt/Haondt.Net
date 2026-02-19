@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Haondt.UI.Shared.ModelBinders
+namespace Haondt.Web.Core.ModelBinders
 {
     public class CheckboxModelBinder : IModelBinder
     {

@@ -1,7 +1,7 @@
 ﻿using Haondt.Core.Models;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Haondt.UI.Shared.ModelBinders
+namespace Haondt.Web.Core.ModelBinders
 {
     public class AbsoluteDateTimeModelBinderProvider : IModelBinderProvider
     {

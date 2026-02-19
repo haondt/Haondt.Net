@@ -11,7 +11,8 @@ namespace Haondt.Core.Extensions
             return new();
         }
 
-        public static Optional<TValue> GetValue<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) where TValue : notnull
+        // named as such because Dictionary<TKey, TValue> can't differentiate between the extensions
+        public static Optional<TValue> ReadOnlyGetValue<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) where TValue : notnull
         {
             if (dictionary.TryGetValue(key, out var value))
                 return new(value);

@@ -1,4 +1,4 @@
-﻿using Haondt.UI.Shared.ModelBinders;
+﻿using Haondt.Web.Core.ModelBinders;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Haondt.Web.Core.Extensions
