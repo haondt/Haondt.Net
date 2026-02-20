@@ -17,7 +17,7 @@
     protected override void OnInitialized()
     {
         if (HtmxOptions.Value.Extensions.Count > 0)
-            _bodyAttributes["hx-ext"] = string.Join(' ', HtmxOptions.Value.Extensions);
+            _bodyAttributes["hx-ext"] = string.Join(',', HtmxOptions.Value.Extensions);
     }
 }
 
