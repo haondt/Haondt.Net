@@ -35,6 +35,8 @@
             var difference = a.UnixTimeSeconds - b.UnixTimeSeconds;
             return TimeSpan.FromSeconds(difference);
         }
+        public static AbsoluteDateTime operator +(AbsoluteDateTime a, TimeSpan b) => new(a.UnixTimeSeconds + (int)b.TotalSeconds);
+        public static AbsoluteDateTime operator -(AbsoluteDateTime a, TimeSpan b) => new(a.UnixTimeSeconds - (int)b.TotalSeconds);
 
         public static bool operator <=(AbsoluteDateTime a, AbsoluteDateTime b) => a.UnixTimeSeconds <= b.UnixTimeSeconds;
         public static bool operator >=(AbsoluteDateTime a, AbsoluteDateTime b) => a.UnixTimeSeconds >= b.UnixTimeSeconds;
