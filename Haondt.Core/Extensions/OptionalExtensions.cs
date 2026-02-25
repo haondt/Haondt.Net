@@ -59,6 +59,27 @@ namespace Haondt.Core.Extensions
                 return await mapper(optional.Value);
             return new();
         }
+        public static Optional<T> Filter<T>(this Optional<T> optional, Func<T, bool> predicate) where T : notnull
+        {
+            if (!optional.HasValue)
+                return optional;
+            if (predicate(optional.Value))
+                return optional;
+            return new();
+        }
+
+        public static async Task<Optional<T>> Filter<T>(this Optional<T> optional, Func<T, Task<bool>> predicate) where T : notnull
+        {
+            if (!optional.HasValue)
+                return optional;
+            if (await predicate(optional.Value))
+                return optional;
+            return new();
+        }
+
+        public static Optional<T> Reject<T>(this Optional<T> optional, Func<T, bool> predicate) where T : notnull => optional.Filter(q => !predicate(q));
+
+        public static Task<Optional<T>> Reject<T>(this Optional<T> optional, Func<T, Task<bool>> predicate) where T : notnull => optional.Filter(async q => !(await predicate(q)));
 
         public static T? Unwrap<T>(this Optional<T> optional) where T : class
         {
