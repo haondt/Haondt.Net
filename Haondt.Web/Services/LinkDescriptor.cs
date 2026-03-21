@@ -1,5 +1,4 @@
-﻿using Haondt.Core.Extensions;
-using Haondt.Core.Models;
+﻿using Haondt.Core.Models;
 
 namespace Haondt.Web.Services
 {
@@ -8,7 +7,8 @@ namespace Haondt.Web.Services
         public Optional<string> Relationship { get; set; }
         public Optional<string> Type { get; set; }
         public required string Uri { get; set; }
-        public Optional<Optional<string>> CrossOrigin { get; set; }
+        public Union<string, bool>? CrossOrigin { get; set; }
+        public Optional<string> As { get; set; }
 
         public string Render()
         {
@@ -23,9 +23,12 @@ namespace Haondt.Web.Services
             if (Type.TryGetValue(out var type))
                 parts.Add($"type=\"{type}\"");
 
-            if (CrossOrigin.TryGetValue(out var crossOrigin))
+            if (As.TryGetValue(out var @as))
+                parts.Add($"as=\"{@as}\"");
+
+            if (CrossOrigin is { } crossOrigin)
             {
-                var crossOriginValue = crossOrigin.Map(v => $"=\"{v}\"").Or("");
+                var crossOriginValue = crossOrigin.Is<string>(out var v) ? $"=\"{v}\"" : "";
                 parts.Add($"crossorigin{crossOriginValue}");
             }
 
