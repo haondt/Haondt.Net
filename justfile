@@ -6,6 +6,9 @@ build:
 
 rebuild: clean build
 
+test:
+    dotnet test
+
 local_nuget_dir := "$HOME/packages/nuget"
 
 [script]
@@ -56,3 +59,15 @@ pack:
     done
 
     echo "All projects have been packed and copied to {{local_nuget_dir}}."
+
+[arg('target', pattern='web-demo|tbd')]
+[arg('reload', short='r', long="hot-reload", value='')]
+watch target='web-demo' reload='--no-hot-reload':
+    DOTNET_WATCH_SUPPRESS_EMOJIS=1 \
+        dotnet watch --non-interactive --project \
+        {{
+            if target == "web-demo" { "Haondt.Web.Demo/Haondt.Web.Demo.csproj" }
+            else { "tbd" }
+        }} \
+        {{ reload }}
+

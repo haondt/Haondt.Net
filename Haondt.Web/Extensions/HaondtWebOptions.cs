@@ -4,7 +4,7 @@ namespace Haondt.Web.Extensions
 {
     public class HaondtWebOptions
     {
-        public Optional<string> HtmxScriptUri { get; set; } = "https://unpkg.com/htmx.org@2.0.4";
-        public Optional<string> HyperscriptScriptUri { get; set; } = "https://unpkg.com/hyperscript.org@0.9.13";
+        public Optional<string> HtmxScriptUri { get; set; } = "/static/haondt/Haondt.Web/vendored/htmx.org/dist/htmx.min.js";
+        public Optional<string> HyperscriptScriptUri { get; set; } = "/static/haondt/Haondt.Web/vendored/hyperscript.org/dist/_hyperscript.min.js";
     }
 }

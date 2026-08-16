@@ -7,7 +7,7 @@ using MongoDB.Driver;
 
 namespace Haondt.Persistence.Tests
 {
-    public class MongoDbStorageTests : AbstractStorageTests
+    public class MongoDbStorageTests : AbstractStorageTests, IClassFixture<MongoDbContainerFixture>
     {
         static MongoDbStorageTests()
         {
@@ -16,31 +16,11 @@ namespace Haondt.Persistence.Tests
             BsonSerializer.RegisterSerializer(typeof(StorageKey), new StorageKeyBsonConverter());
         }
 
-        private static MongoClientSettings MongoClientSettings
-        {
-            get
-            {
-
-                var settings = MongoClientSettings.FromConnectionString("mongodb://haondt:haondt@localhost:37017/");
-                settings.ClusterConfigurator = cb =>
-                {
-                    // for debugging
-                    //cb.Subscribe<CommandStartedEvent>(e =>
-                    //{
-                    //    var x = e.CommandName;
-                    //    var y = e.Command.ToJson();
-                    //    ;
-                    //});
-                };
-                return settings;
-            }
-        }
-
-        public MongoDbStorageTests() : base(
+        public MongoDbStorageTests(MongoDbContainerFixture fixture) : base(
             new MongoDbStorage(
                 "haondt",
                 "haondt",
-                new MongoClient(MongoClientSettings)))
+                new MongoClient(fixture.ConnectionString)))
         {
             StorageKeyConvert.DefaultSerializerSettings = new StorageKeySerializerSettings
             {

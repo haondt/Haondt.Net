@@ -117,8 +117,9 @@ namespace Haondt.Persistence.Sqlite.Services
 
             if (WithConnection(connection =>
             {
-                var checkTableQuery = $"SELECT name FROM sqlite_master WHERE type = 'table' AND name = {_primaryTableName};";
-                using var checkTableCommand = new SqliteCommand(checkTableQuery, connection);
+                using var checkTableCommand = new SqliteCommand(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = @name;", connection);
+                checkTableCommand.Parameters.AddWithValue("@name", _settings.PrimaryTableName);
                 return checkTableCommand.ExecuteScalar() != null;
             }))
                 return;

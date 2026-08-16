@@ -40,7 +40,7 @@ namespace Haondt.Persistence.Tests
             await storage.Set(key, new Car { Color = "red" });
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("red");
+            existing.Value!.Color.Should().Be("red");
         }
 
         [Fact]
@@ -63,19 +63,19 @@ namespace Haondt.Persistence.Tests
 
             var car = await storage.Get(key);
             car.IsSuccessful.Should().BeTrue();
-            car.Value.Color.Should().Be("red");
+            car.Value!.Color.Should().Be("red");
 
             var car2 = await storage.Get(key2);
             car2.IsSuccessful.Should().BeTrue();
-            car2.Value.Color.Should().Be("blue");
+            car2.Value!.Color.Should().Be("blue");
 
             var car3 = await storage.Get(key3);
             car3.IsSuccessful.Should().BeTrue();
-            car3.Value.Color.Should().Be("green");
+            car3.Value!.Color.Should().Be("green");
 
             var car4 = await storage.Get(key4);
             car4.IsSuccessful.Should().BeTrue();
-            car4.Value.Color.Should().Be("yellow");
+            car4.Value!.Color.Should().Be("yellow");
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace Haondt.Persistence.Tests
 
             var car = await storage.Get(key);
             car.IsSuccessful.Should().BeTrue();
-            car.Value.Color.Should().Be("red");
+            car.Value!.Color.Should().Be("red");
         }
 
         [Fact]
@@ -109,12 +109,12 @@ namespace Haondt.Persistence.Tests
             await storage.Set(key, new NullContainer { Value = null });
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Value.Should().BeNull();
+            existing.Value!.Value.Should().BeNull();
 
             await storage.Set(key, new NullContainer { Value = new Car { Color = "red" } });
             existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Value.Should().NotBeNull();
+            existing.Value!.Value.Should().NotBeNull();
             existing.Value.Value!.Color.Should().Be("red");
         }
 
@@ -156,7 +156,7 @@ namespace Haondt.Persistence.Tests
             await storage.Set(key, new Tire { Diameter = 10 });
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Diameter.Should().Be(10);
+            existing.Value!.Diameter.Should().Be(10);
         }
 
         [Fact]
@@ -247,7 +247,7 @@ namespace Haondt.Persistence.Tests
                 var (key, value) = pairs[i];
                 var result = await storage.Get(key.As<Car>());
                 result.IsSuccessful.Should().BeTrue();
-                result.Value.Color.Should().Be($"color_{i}");
+                result.Value!.Color.Should().Be($"color_{i}");
             }
         }
 
@@ -295,7 +295,7 @@ namespace Haondt.Persistence.Tests
             {
                 var result = results[i];
                 result.IsSuccessful.Should().BeTrue();
-                result.Value.Color.Should().Be($"color_{i}");
+                result.Value!.Color.Should().Be($"color_{i}");
             }
         }
 
@@ -474,11 +474,11 @@ namespace Haondt.Persistence.Tests
             });
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("red");
+            existing.Value!.Color.Should().Be("red");
 
             existing = await storage.Get(key2);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("blue");
+            existing.Value!.Color.Should().Be("blue");
         }
 
         [Fact]
@@ -560,7 +560,7 @@ namespace Haondt.Persistence.Tests
 
             existing = await storage.Get(key3);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("green");
+            existing.Value!.Color.Should().Be("green");
         }
 
         [Fact]
@@ -598,11 +598,11 @@ namespace Haondt.Persistence.Tests
 
             existing = await storage.Get(key3);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("green");
+            existing.Value!.Color.Should().Be("green");
 
             existing = await storage.Get(key4);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("yellow");
+            existing.Value!.Color.Should().Be("yellow");
         }
 
         [Fact]
@@ -664,7 +664,7 @@ namespace Haondt.Persistence.Tests
             })).Should().ThrowAsync<InvalidOperationException>();
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("red");
+            existing.Value!.Color.Should().Be("red");
 
             existing = await storage.Get(key2);
             existing.IsSuccessful.Should().BeFalse();
@@ -692,9 +692,9 @@ namespace Haondt.Persistence.Tests
             var car = await storage.Get(key);
             var car2 = await storage.Get(key2);
             car.IsSuccessful.Should().BeTrue();
-            car.Value.Color.Should().BeEquivalentTo("blue");
+            car.Value!.Color.Should().BeEquivalentTo("blue");
             car2.IsSuccessful.Should().BeTrue();
-            car2.Value.Color.Should().BeEquivalentTo("green");
+            car2.Value!.Color.Should().BeEquivalentTo("green");
         }
 
         [Fact]
@@ -842,7 +842,7 @@ namespace Haondt.Persistence.Tests
             var car2 = await storage.Get(key2);
             car.IsSuccessful.Should().BeFalse();
             car2.IsSuccessful.Should().BeTrue();
-            car2.Value.Color.Should().BeEquivalentTo("green");
+            car2.Value!.Color.Should().BeEquivalentTo("green");
         }
 
         [Fact]
@@ -876,15 +876,15 @@ namespace Haondt.Persistence.Tests
 
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("red");
+            existing.Value!.Color.Should().Be("red");
 
             existing = await storage.Get(key2);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("blue");
+            existing.Value!.Color.Should().Be("blue");
 
             existing = await storage.Get(key3);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("green");
+            existing.Value!.Color.Should().Be("green");
         }
 
         [Fact]
@@ -913,11 +913,11 @@ namespace Haondt.Persistence.Tests
 
             var existing = await storage.Get(key);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("red");
+            existing.Value!.Color.Should().Be("red");
 
             existing = await storage.Get(key2);
             existing.IsSuccessful.Should().BeTrue();
-            existing.Value.Color.Should().Be("blue");
+            existing.Value!.Color.Should().Be("blue");
         }
 
         [Fact]

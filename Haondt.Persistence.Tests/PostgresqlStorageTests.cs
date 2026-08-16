@@ -5,17 +5,17 @@ using Microsoft.Extensions.Options;
 
 namespace Haondt.Persistence.Tests
 {
-    public class PostgresqlStorageTests : AbstractStorageTests
+    public class PostgresqlStorageTests : AbstractStorageTests, IClassFixture<PostgresqlContainerFixture>
     {
-        public PostgresqlStorageTests() : base(new TransientTransactionalBatchStorage(new PostgresqlStorage(Options.Create(new PostgresqlStorageSettings
+        public PostgresqlStorageTests(PostgresqlContainerFixture fixture) : base(new TransientTransactionalBatchStorage(new PostgresqlStorage(Options.Create(new PostgresqlStorageSettings
         {
-            Host = "localhost",
+            Host = fixture.Host,
             Database = "haondt",
             Username = "haondt",
             Password = "haondt",
             ForeignKeyTableName = "foreignKeys",
             PrimaryTableName = "haondt",
-            Port = 3432,
+            Port = fixture.Port,
             StoreKeyStrings = true
         }))))
         {

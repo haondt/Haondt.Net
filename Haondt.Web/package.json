@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "htmx.org": "^2.0.10",
+    "hyperscript.org": "^0.9.93"
+  }
+}
